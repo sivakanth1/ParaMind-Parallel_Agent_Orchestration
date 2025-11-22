@@ -1,0 +1,265 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "total_prompts": 25,
+    "categories": [
+      "mode_a_comparison",
+      "mode_b_independent",
+      "mode_b_dependent",
+      "edge_case",
+      "simple_task"
+    ]
+  },
+  "prompts": [
+    {
+      "id": "001",
+      "category": "mode_a_comparison",
+      "expected_mode": "A",
+      "prompt": "Compare Python and JavaScript for backend development",
+      "description": "Simple comparison task",
+      "expected_agents": 2,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "002",
+      "category": "mode_a_comparison",
+      "expected_mode": "A",
+      "prompt": "What are the pros and cons of remote work versus office work?",
+      "description": "Comparison with multiple perspectives",
+      "expected_agents": 2,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "003",
+      "category": "mode_a_comparison",
+      "expected_mode": "A",
+      "prompt": "Compare the economic impact of renewable energy versus fossil fuels",
+      "description": "Complex comparison",
+      "expected_agents": 2,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "004",
+      "category": "mode_a_comparison",
+      "expected_mode": "A",
+      "prompt": "Analyze the differences between centralized and decentralized systems",
+      "description": "Technical comparison",
+      "expected_agents": 2,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "005",
+      "category": "mode_a_comparison",
+      "expected_mode": "A",
+      "prompt": "Compare machine learning and traditional programming approaches",
+      "description": "Methodology comparison",
+      "expected_agents": 2,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "006",
+      "category": "mode_b_independent",
+      "expected_mode": "B",
+      "prompt": "Research the history, applications, and future of artificial intelligence",
+      "description": "Three independent research tasks",
+      "expected_agents": 3,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "007",
+      "category": "mode_b_independent",
+      "expected_mode": "B",
+      "prompt": "Plan a 3-day trip to Tokyo including budget, attractions, and food recommendations",
+      "description": "Travel planning with multiple components",
+      "expected_agents": 3,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "008",
+      "category": "mode_b_independent",
+      "expected_mode": "B",
+      "prompt": "Create a workout plan, meal plan, and sleep schedule for weight loss",
+      "description": "Health planning with independent components",
+      "expected_agents": 3,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "009",
+      "category": "mode_b_independent",
+      "expected_mode": "B",
+      "prompt": "Analyze the environmental, economic, and social impacts of electric vehicles",
+      "description": "Multi-faceted analysis",
+      "expected_agents": 3,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "010",
+      "category": "mode_b_independent",
+      "expected_mode": "B",
+      "prompt": "Research quantum computing, edge computing, and fog computing",
+      "description": "Three independent technical topics",
+      "expected_agents": 3,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "011",
+      "category": "mode_b_dependent",
+      "expected_mode": "B",
+      "prompt": "Research the history of Bitcoin and then write a summary based on that research",
+      "description": "Simple sequential dependency",
+      "expected_agents": 2,
+      "expected_layers": 2,
+      "has_dependencies": true
+    },
+    {
+      "id": "012",
+      "category": "mode_b_dependent",
+      "expected_mode": "B",
+      "prompt": "Research Bitcoin and Ethereum separately, then write a comparison based on both research results",
+      "description": "Parallel then merge",
+      "expected_agents": 3,
+      "expected_layers": 2,
+      "has_dependencies": true
+    },
+    {
+      "id": "013",
+      "category": "mode_b_dependent",
+      "expected_mode": "B",
+      "prompt": "First, research the history of blockchain. Second, analyze current blockchain applications. Third, predict future trends based on the history and current state",
+      "description": "Sequential chain",
+      "expected_agents": 3,
+      "expected_layers": 3,
+      "has_dependencies": true
+    },
+    {
+      "id": "014",
+      "category": "mode_b_dependent",
+      "expected_mode": "B",
+      "prompt": "Research climate change causes, then propose solutions based on the causes",
+      "description": "Research then solution",
+      "expected_agents": 2,
+      "expected_layers": 2,
+      "has_dependencies": true
+    },
+    {
+      "id": "015",
+      "category": "mode_b_dependent",
+      "expected_mode": "B",
+      "prompt": "Analyze current market trends, then make investment recommendations based on the analysis",
+      "description": "Analysis then recommendation",
+      "expected_agents": 2,
+      "expected_layers": 2,
+      "has_dependencies": true
+    },
+    {
+      "id": "016",
+      "category": "simple_task",
+      "expected_mode": "A",
+      "prompt": "What is quantum computing?",
+      "description": "Simple factual question",
+      "expected_agents": 2,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "017",
+      "category": "simple_task",
+      "expected_mode": "A",
+      "prompt": "Explain machine learning in simple terms",
+      "description": "Explanation task",
+      "expected_agents": 2,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "018",
+      "category": "simple_task",
+      "expected_mode": "A",
+      "prompt": "List the benefits of exercise",
+      "description": "Simple listing task",
+      "expected_agents": 2,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "019",
+      "category": "simple_task",
+      "expected_mode": "A",
+      "prompt": "Describe the water cycle",
+      "description": "Basic science explanation",
+      "expected_agents": 2,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "020",
+      "category": "simple_task",
+      "expected_mode": "A",
+      "prompt": "What are the main causes of deforestation?",
+      "description": "Factual question",
+      "expected_agents": 2,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "021",
+      "category": "edge_case",
+      "expected_mode": "A",
+      "prompt": "Hi",
+      "description": "Extremely short prompt",
+      "expected_agents": 2,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "022",
+      "category": "edge_case",
+      "expected_mode": "A",
+      "prompt": "Research the complete history of human civilization from prehistoric times to the present day, including political, economic, social, cultural, technological, and environmental aspects across all continents",
+      "description": "Extremely long complex prompt",
+      "expected_agents": 2,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "023",
+      "category": "edge_case",
+      "expected_mode": "B",
+      "prompt": "Plan and research and analyze and compare and summarize",
+      "description": "Ambiguous multiple 'and' keywords",
+      "expected_agents": 3,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "024",
+      "category": "edge_case",
+      "expected_mode": "A",
+      "prompt": "Calculate the meaning of life, the universe, and everything",
+      "description": "Philosophical/impossible task",
+      "expected_agents": 2,
+      "expected_layers": 1,
+      "has_dependencies": false
+    },
+    {
+      "id": "025",
+      "category": "edge_case",
+      "expected_mode": "A",
+      "prompt": "Translate 'hello' to Spanish, French, German, Italian, and Portuguese",
+      "description": "Simple task that looks like Mode B",
+      "expected_agents": 2,
+      "expected_layers": 1,
+      "has_dependencies": false
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "mode_a_prompts": [
+    "Compare Python vs JavaScript for backend development",
+    "What are the pros and cons of remote work?",
+    "Explain quantum computing in simple terms",
+    "Generate a creative story opening about a detective",
+    "What do you think about the future of AI?"
+  ],
+  "mode_b_prompts": [
+    "Plan a 3-day trip to Tokyo including budget, attractions, and food recommendations",
+    "Research the history, current applications, and future potential of blockchain technology",
+    "Create a comprehensive fitness plan with workout routine, meal plan, and recovery schedule",
+    "Develop a marketing strategy covering social media, email campaigns, and content marketing",
+    "Analyze the environmental, economic, and social impacts of electric vehicles"
+  ]
+}

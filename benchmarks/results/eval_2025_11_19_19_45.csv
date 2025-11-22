@@ -1,0 +1,26 @@
+prompt_id,category,prompt,mode_detected,mode_expected,mode_accuracy,num_agents,num_layers,has_dependencies,plan_latency,exec_latency,total_latency,sequential_baseline,speedup,success_rate,failed_agents,total_tokens,timestamp
+001,mode_a_comparison,Compare Python and JavaScript for backend development,A,A,True,2,1,False,0.0,0.0,0.01,3.83,1095.11,100.0,0,1669,2025-11-19T19:45:41.464180
+002,mode_a_comparison,What are the pros and cons of remote work versus office work?,A,A,True,2,1,False,0.0,0.0,0.01,2.53,711.57,100.0,0,1364,2025-11-19T19:45:41.471252
+003,mode_a_comparison,Compare the economic impact of renewable energy versus fossil fuels,A,A,True,2,1,False,0.0,0.02,0.02,3.77,169.55,100.0,0,1622,2025-11-19T19:45:41.495486
+004,mode_a_comparison,Analyze the differences between centralized and decentralized systems,A,A,True,2,1,False,0.0,0.02,0.02,4.06,206.02,100.0,0,1743,2025-11-19T19:45:41.517204
+005,mode_a_comparison,Compare machine learning and traditional programming approaches,A,A,True,2,1,False,0.01,0.0,0.01,2.58,766.54,100.0,0,1243,2025-11-19T19:45:41.529966
+006,mode_b_independent,"Research the history, applications, and future of artificial intelligence",B,B,True,3,1,False,0.01,0.02,0.03,7.38,403.23,100.0,0,2878,2025-11-19T19:45:41.556231
+007,mode_b_independent,"Plan a 3-day trip to Tokyo including budget, attractions, and food recommendations",B,B,True,3,1,False,0.01,0.01,0.02,5.52,533.16,100.0,0,2617,2025-11-19T19:45:41.575711
+008,mode_b_independent,"Create a workout plan, meal plan, and sleep schedule for weight loss",B,B,True,3,1,False,0.01,0.03,0.04,4.08,130.11,100.0,0,2462,2025-11-19T19:45:41.614620
+009,mode_b_independent,"Analyze the environmental, economic, and social impacts of electric vehicles",B,B,True,3,1,False,0.01,0.01,0.02,7.13,726.72,100.0,0,2558,2025-11-19T19:45:41.634077
+010,mode_b_independent,"Research quantum computing, edge computing, and fog computing",B,B,True,3,1,False,0.01,0.01,0.02,5.96,596.54,100.0,0,2642,2025-11-19T19:45:41.652247
+011,mode_b_dependent,Research the history of Bitcoin and then write a summary based on that research,B,B,True,2,DAG,True,0.01,0.02,0.02,4.26,231.34,100.0,0,1711,2025-11-19T19:45:41.676963
+012,mode_b_dependent,"Research Bitcoin and Ethereum separately, then write a comparison based on both research results",B,B,True,3,DAG,True,0.0,0.01,0.02,6.19,445.09,100.0,0,3558,2025-11-19T19:45:41.694228
+013,mode_b_dependent,"First, research the history of blockchain. Second, analyze current blockchain applications. Third, predict future trends based on the history and current state",B,B,True,3,DAG,True,0.0,0.02,0.02,7.04,343.71,100.0,0,3912,2025-11-19T19:45:41.717515
+014,mode_b_dependent,"Research climate change causes, then propose solutions based on the causes",B,B,True,4,DAG,True,0.01,0.04,0.05,11.18,314.04,100.0,0,5370,2025-11-19T19:45:41.763938
+015,mode_b_dependent,"Analyze current market trends, then make investment recommendations based on the analysis",B,B,True,3,DAG,True,0.0,0.02,0.03,9.31,397.95,100.0,0,3066,2025-11-19T19:45:41.791233
+016,simple_task,What is quantum computing?,A,A,True,2,1,False,0.0,0.01,0.01,2.54,257.92,100.0,0,1368,2025-11-19T19:45:41.803175
+017,simple_task,Explain machine learning in simple terms,A,A,True,2,1,False,0.0,0.02,0.02,2.45,140.29,100.0,0,1010,2025-11-19T19:45:41.823154
+018,simple_task,List the benefits of exercise,A,A,True,2,1,False,0.0,0.02,0.02,2.36,118.17,100.0,0,1133,2025-11-19T19:45:41.845130
+019,simple_task,Describe the water cycle,B,A,False,4,DAG,True,0.0,0.03,0.03,7.97,277.46,100.0,0,3608,2025-11-19T19:45:41.877143
+020,simple_task,What are the main causes of deforestation?,A,A,True,2,1,False,0.01,0.01,0.02,2.94,262.56,100.0,0,915,2025-11-19T19:45:41.897080
+021,edge_case,Hi,A,A,True,2,1,False,0.0,0.01,0.01,0.6,66.45,100.0,0,118,2025-11-19T19:45:41.908322
+022,edge_case,"Research the complete history of human civilization from prehistoric times to the present day, including political, economic, social, cultural, technological, and environmental aspects across all continents",B,A,False,5,DAG,True,0.01,0.02,0.03,21.01,864.05,100.0,0,7557,2025-11-19T19:45:41.940633
+023,edge_case,Plan and research and analyze and compare and summarize,B,B,True,5,DAG,True,0.0,0.04,0.04,9.05,255.26,100.0,0,4404,2025-11-19T19:45:41.977787
+024,edge_case,"Calculate the meaning of life, the universe, and everything",A,A,True,2,1,False,0.0,0.02,0.02,1.84,116.73,100.0,0,752,2025-11-19T19:45:41.996819
+025,edge_case,"Translate 'hello' to Spanish, French, German, Italian, and Portuguese",B,A,False,5,1,False,0.0,0.02,0.02,0.88,56.63,100.0,0,274,2025-11-19T19:45:42.017193

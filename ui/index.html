@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParaMind | Intelligent Agent Orchestration</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo-icon">🤖</div>
+                <h1>ParaMind</h1>
+            </div>
+
+            <nav class="nav">
+                <a href="#home" class="nav-item active" onclick="navigate('home')">
+                    <span class="icon">🏠</span>
+                    <span>Home</span>
+                </a>
+                <a href="#demo" class="nav-item" onclick="navigate('demo')">
+                    <span class="icon">✨</span>
+                    <span>Live Demo</span>
+                </a>
+                <a href="#benchmarks" class="nav-item" onclick="navigate('benchmarks')">
+                    <span class="icon">📊</span>
+                    <span>Benchmarks</span>
+                </a>
+            </nav>
+
+            <div class="status">
+                <div class="status-dot"></div>
+                <span>System Online</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content">
+
+            <!-- HOME SECTION -->
+            <section id="home" class="page active">
+                <div class="hero">
+                    <h1 class="title-gradient">Dynamic Parallel Agent Orchestration</h1>
+                    <p class="subtitle">Intelligent task decomposition with concurrent execution powered by LLMs</p>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-icon success">✓</div>
+                        <div class="metric-value" id="m-success">--%</div>
+                        <div class="metric-label">Success Rate</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon speed">⚡</div>
+                        <div class="metric-value" id="m-speedup">--x</div>
+                        <div class="metric-label">Avg Speedup</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon time">⏱</div>
+                        <div class="metric-value" id="m-latency">--s</div>
+                        <div class="metric-label">Avg Latency</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon count">📝</div>
+                        <div class="metric-value" id="m-total">--</div>
+                        <div class="metric-label">Tests Completed</div>
+                    </div>
+                </div>
+
+                <div class="features">
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Mode A: Data Parallel</h3>
+                        <p>Execute identical prompts across multiple LLMs simultaneously for diverse perspectives and
+                            consensus.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <h3>Mode B: Task Parallel</h3>
+                        <p>Decompose complex requests into independent subtasks executed concurrently for maximum
+                            efficiency.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔗</div>
+                        <h3>Dependency Aware</h3>
+                        <p>DAG-based execution with automatic ordering and context injection for dependent tasks.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DEMO SECTION -->
+            <section id="demo" class="page">
+                <div class="demo-header">
+                    <h1 class="title-gradient">Live Demonstration</h1>
+                    <p class="subtitle">Test the orchestration engine with your prompts</p>
+                </div>
+
+                <div class="demo-container">
+                    <!-- Input Section -->
+                    <div class="input-card">
+                        <label>Enter Your Prompt</label>
+                        <textarea id="prompt-input"
+                            placeholder="e.g., Plan a 3-day trip to Paris with budget, attractions, and restaurant recommendations..."
+                            rows="5"></textarea>
+                        <div class="quick-examples">
+                            <span class="example-label">Quick Examples:</span>
+                            <button class="example-btn" onclick="loadExample(0)">Comparison</button>
+                            <button class="example-btn" onclick="loadExample(1)">Planning</button>
+                            <button class="example-btn" onclick="loadExample(2)">Research</button>
+                        </div>
+                        <button class="btn-primary" onclick="runDemo()">
+                            <span>Execute →</span>
+                        </button>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="loading" class="loading-state" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Processing your request...</p>
+                    </div>
+
+                    <!-- Plan Display -->
+                    <div id="plan-display" class="plan-display" style="display: none;">
+                        <h3>📋 Execution Plan</h3>
+                        <div class="plan-badge" id="mode-badge"></div>
+                        <div class="plan-details" id="plan-details"></div>
+                    </div>
+
+                    <!-- Results Display -->
+                    <div id="results-display" class="results-section" style="display: none;">
+                        <h2 class="results-title">✨ Results</h2>
+                        <div id="results-container" class="results-grid"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- BENCHMARKS SECTION -->
+            <section id="benchmarks" class="page">
+                <div class="benchmark-header">
+                    <h1 class="title-gradient">Performance Benchmarks</h1>
+                    <p class="subtitle">Detailed metrics from evaluation runs</p>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="speedupChart"></canvas>
+                </div>
+
+                <div class="table-container">
+                    <h3>Detailed Results</h3>
+                    <table id="benchmark-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Category</th>
+                                <th>Mode</th>
+                                <th>Latency</th>
+                                <th>Speedup</th>
+                                <th>Success</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+
+</html>
