@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from src.llm_clients import LLMClient
 from src.controller import Controller
 from src.agents import ParallelExecutor
+from src.aggregator import Aggregator
 
 app = FastAPI(title="ParaMind API", description="API for Parallel Agent Orchestration")
 
@@ -25,6 +26,7 @@ app.add_middleware(
 llm_client = LLMClient()
 controller = Controller(llm_client)
 executor = ParallelExecutor(llm_client)
+aggregator = Aggregator(llm_client)
 
 # Models
 class PromptRequest(BaseModel):
@@ -62,7 +64,13 @@ async def execute_plan(request: ExecuteRequest):
         else:
             raise HTTPException(status_code=400, detail="Invalid mode")
             
-        return {"results": results}
+        # Aggregate results
+        combined_result = await aggregator.summarize(results)
+            
+        return {
+            "results": results,
+            "combined": combined_result
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

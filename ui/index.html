@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ParaMind | Intelligent Agent Orchestration</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2.0">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -80,7 +80,7 @@
                         <div class="feature-icon">⚡</div>
                         <h3>Mode A: Data Parallel</h3>
                         <p>Execute identical prompts across multiple LLMs simultaneously for diverse perspectives and
-                            consensus.</p>
+                            consensus</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">🎯</div>
@@ -94,6 +94,53 @@
                         <p>DAG-based execution with automatic ordering and context injection for dependent tasks.</p>
                     </div>
                 </div>
+
+                <!-- How It Works - Premium Design -->
+                <div class="how-it-works-premium">
+                    <h2 class="section-title">How It Works</h2>
+                    <p class="section-subtitle-premium">Experience intelligent orchestration in 4 seamless steps</p>
+
+                    <div class="premium-flow">
+                        <div class="premium-step" data-step="1">
+                            <div class="step-num">01</div>
+                            <div class="step-glow"></div>
+                            <div class="step-icon-premium">👤</div>
+                            <h3 class="step-title-premium">User Input</h3>
+                            <p class="step-desc-premium">Submit your complex task or question</p>
+                        </div>
+
+                        <div class="flow-arrow-premium">→</div>
+
+                        <div class="premium-step" data-step="2">
+                            <div class="step-num">02</div>
+                            <div class="step-glow"></div>
+                            <div class="step-icon-premium">🧠</div>
+                            <h3 class="step-title-premium">Smart Analysis</h3>
+                            <p class="step-desc-premium">AI breaks it into optimal subtasks</p>
+                        </div>
+
+                        <div class="flow-arrow-premium">→</div>
+
+                        <div class="premium-step" data-step="3">
+                            <div class="step-num">03</div>
+                            <div class="step-glow"></div>
+                            <div class="step-icon-premium">⚡</div>
+                            <h3 class="step-title-premium">Parallel Execution</h3>
+                            <p class="step-desc-premium">Multiple agents work simultaneously</p>
+                        </div>
+
+                        <div class="flow-arrow-premium">→</div>
+
+                        <div class="premium-step" data-step="4">
+                            <div class="step-num">04</div>
+                            <div class="step-glow"></div>
+                            <div class="step-icon-premium">✨</div>
+                            <h3 class="step-title-premium">Unified Result</h3>
+                            <p class="step-desc-premium">Comprehensive answer delivered</p>
+                        </div>
+                    </div>
+                </div>
+
             </section>
 
             <!-- DEMO SECTION -->
@@ -110,6 +157,25 @@
                         <textarea id="prompt-input"
                             placeholder="e.g., Plan a 3-day trip to Paris with budget, attractions, and restaurant recommendations..."
                             rows="5"></textarea>
+
+                        <!-- Playground Controls -->
+                        <div class="playground-controls">
+                            <div class="control-group">
+                                <label>Model</label>
+                                <select id="model-select">
+                                    <option value="">Auto (Default)</option>
+                                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B</option>
+                                    <option value="llama-3.1-8b-instant">Llama 3.1 8B</option>
+                                    <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+                                    <option value="gemma2-9b-it">Gemma 2 9B</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <label>Agents</label>
+                                <input type="number" id="agent-count" min="1" max="5" placeholder="Auto">
+                            </div>
+                        </div>
+
                         <div class="quick-examples">
                             <span class="example-label">Quick Examples:</span>
                             <button class="example-btn" onclick="loadExample(0)">Comparison</button>
@@ -131,13 +197,15 @@
                     <div id="plan-display" class="plan-display" style="display: none;">
                         <h3>📋 Execution Plan</h3>
                         <div class="plan-badge" id="mode-badge"></div>
-                        <div class="plan-details" id="plan-details"></div>
+                        <div id="visual-plan-container"></div>
+                        <button class="view-json-btn" onclick="toggleJsonPlan()">Show Raw JSON</button>
+                        <div class="plan-details" id="plan-details" style="display: none;"></div>
                     </div>
 
                     <!-- Results Display -->
                     <div id="results-display" class="results-section" style="display: none;">
                         <h2 class="results-title">✨ Results</h2>
-                        <div id="results-container" class="results-grid"></div>
+                        <div id="results-container" class="results-wrapper"></div>
                     </div>
                 </div>
             </section>

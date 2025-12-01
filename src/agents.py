@@ -17,13 +17,17 @@ class ParallelExecutor:
         self, 
         model: str, 
         prompt: str, 
-        timeout: int = 30
+        timeout: int = 60  # Increased timeout for longer responses
     ) -> Dict:
         """Execute single agent with timeout and semaphore"""
         async with self.semaphore:
             try:
                 return await asyncio.wait_for(
-                    self.client.call_llm(model, prompt + "\n\nIMPORTANT: Format your response using Markdown. Use tables for structured data, bullet points for lists, and bold text for key information."),
+                    self.client.call_llm(
+                        model, 
+                        prompt + "\n\nIMPORTANT: Format your response using Markdown. Use tables for structured data, bullet points for lists, and bold text for key information.",
+                        max_tokens=None  # Unlimited - use model's full capacity
+                    ),
                     timeout=timeout
                 )
             except asyncio.TimeoutError:
@@ -50,27 +54,6 @@ class ParallelExecutor:
     async def mode_b_execution(self, subtasks: List[Dict]) -> List[Dict]:
         """Execute different subtasks concurrently"""
         # Check for dependencies
-        if any(t.get("depends_on") for t in subtasks):
-            logger.info("🔄 Detected dependencies, switching to DAG execution")
-            return await self.mode_b_execution_with_deps(subtasks)
-
-        logger.info(f"⚡ Mode B: Executing {len(subtasks)} subtasks in parallel")
-    
-        tasks = [
-            self.execute_agent(subtask["model"], subtask["description"])
-            for subtask in subtasks
-        ]
-        results = await asyncio.gather(*tasks)
-    
-        success_count = len([r for r in results if not r["error"]])
-        logger.success(f"✅ Mode B complete: {success_count}/{len(subtasks)} successful")
-    
-        return results
-
-    async def mode_b_execution_with_deps(self, subtasks: List[Dict]) -> List[Dict]:
-        """Execute subtasks respecting dependencies (DAG)"""
-        logger.info(f"🔗 Mode B (DAG): Executing {len(subtasks)} subtasks with dependencies")
-        
         try:
             layers = self._topological_sort(subtasks)
         except ValueError as e:

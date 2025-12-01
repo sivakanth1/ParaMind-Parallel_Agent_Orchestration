@@ -49,8 +49,8 @@ class LLMClient:
         prompt: str, 
         system_prompt: Optional[str] = None,
         temperature: float = 0.7,
-        max_tokens: int = 1000,
-        use_cache: bool = True  # Add option to disable cache
+        max_tokens: Optional[int] = None,  # None = unlimited (use model's max)
+        use_cache: bool = True
     ) -> Dict:
         """
         Universal LLM caller with caching, error handling, and retries
@@ -59,7 +59,7 @@ class LLMClient:
         
         # 🔍 CHECK CACHE FIRST (before making API call)
         if use_cache:
-            cache_key_prompt = f"{system_prompt or ''}\n{prompt}"
+            cache_key_prompt = f"{system_prompt or ''}\\n{prompt}"
             cached_result = cache.get(model, cache_key_prompt)
             if cached_result:
                 logger.info(f"✅ Cache HIT for model={model}, prompt_length={len(prompt)}")
@@ -78,22 +78,30 @@ class LLMClient:
 
             # Route to appropriate client
             if "gpt" in model.lower():
-                response = await self.openai_client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens
-                )
+                # Only pass max_tokens if explicitly set
+                kwargs = {
+                    "model": model,
+                    "messages": messages,
+                    "temperature": temperature
+                }
+                if max_tokens is not None:
+                    kwargs["max_tokens"] = max_tokens
+                    
+                response = await self.openai_client.chat.completions.create(**kwargs)
                 content = response.choices[0].message.content
                 tokens = response.usage.total_tokens
             
             elif "llama" in model.lower() or "mixtral" in model.lower() or "gemma" in model.lower():
-                response = await self.groq_client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens
-                )
+                # Only pass max_tokens if explicitly set
+                kwargs = {
+                    "model": model,
+                    "messages": messages,
+                    "temperature": temperature
+                }
+                if max_tokens is not None:
+                    kwargs["max_tokens"] = max_tokens
+                    
+                response = await self.groq_client.chat.completions.create(**kwargs)
                 content = response.choices[0].message.content
                 tokens = response.usage.total_tokens
             
@@ -113,7 +121,7 @@ class LLMClient:
             
             # 💾 SAVE TO CACHE (after successful call)
             if use_cache:
-                cache_key_prompt = f"{system_prompt or ''}\n{prompt}"
+                cache_key_prompt = f"{system_prompt or ''}\\n{prompt}"
                 cache.set(model, cache_key_prompt, result)
                 logger.debug(f"Cached result for {model}")
             
@@ -126,4 +134,4 @@ class LLMClient:
         except Exception as e:
             latency = time.time() - start
             logger.warning(f"⚠️ {model} failed after {latency:.2f}s: {str(e)} - Retrying...")
-            raise e # Let tenacity handle the retry
+            raise e #  Let tenacity handle the retry

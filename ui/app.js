@@ -46,24 +46,34 @@ async function loadMetrics() {
 // Run Demo
 async function runDemo() {
     const prompt = document.getElementById('prompt-input').value.trim();
+    const model = document.getElementById('model-select').value;
+    const count = document.getElementById('agent-count').value;
+
     if (!prompt) {
         alert('Please enter a prompt first!');
         return;
     }
 
-    document.getElementById('loading').style.display = 'block';
+    document.getElementById('loading').style.display = 'flex';
     document.getElementById('plan-display').style.display = 'none';
     document.getElementById('results-display').style.display = 'none';
+    document.getElementById('results-container').innerHTML = '';
 
     try {
+        // Step 1: Analyze Prompt
         const analyzeRes = await fetch('/analyze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt })
+            body: JSON.stringify({
+                prompt: prompt,
+                model: model || null,
+                agent_count: count ? parseInt(count) : null
+            })
         });
         const plan = await analyzeRes.json();
         displayPlan(plan);
 
+        // Step 2: Execute Plan
         const executeRes = await fetch('/execute', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -141,12 +151,13 @@ function renderVisualPlan(plan) {
 
     if (plan.mode === 'B' && plan.plan && plan.plan.subtasks) {
         plan.plan.subtasks.forEach(task => {
+            const shortDesc = task.description.length > 40 ? task.description.substring(0, 40) + '...' : task.description;
             agentsHtml += `
                 <div class="agent-node active">
                     <span class="agent-icon">🤖</span>
                     <div class="agent-details">
-                        <span>Task ${task.id}</span>
-                        <span class="agent-model">${task.model}</span>
+                        <span style="font-weight: 600; font-size: 0.9rem;">${shortDesc}</span>
+                        <span class="agent-model" style="font-size: 0.75rem; opacity: 0.7;">${task.model}</span>
                     </div>
                 </div>
             `;
@@ -159,8 +170,8 @@ function renderVisualPlan(plan) {
                 <div class="agent-node active">
                     <span class="agent-icon">🤖</span>
                     <div class="agent-details">
-                        <span>Agent ${idx + 1}</span>
-                        <span class="agent-model">${model}</span>
+                        <span style="font-weight: 600; font-size: 0.9rem;">Agent ${idx + 1}: Processing</span>
+                        <span class="agent-model" style="font-size: 0.75rem; opacity: 0.7;">${model}</span>
                     </div>
                 </div>
             `;
@@ -192,6 +203,8 @@ function renderVisualPlan(plan) {
 let currentResultsData = [];
 
 // Display Results - WITH PREMIUM FORMATTING
+// Display Results - WITH PREMIUM FORMATTING
+// Display Results - WITH PREMIUM FORMATTING
 function displayResults(data) {
     currentResultsData = data.results; // Store for toggling
     const container = document.getElementById('results-container');
@@ -203,6 +216,43 @@ function displayResults(data) {
         resultStep.classList.add('active');
     }
 
+    // 1. Display Combined Result (if available) - Full Width
+    if (data.combined) {
+        const combinedCard = document.createElement('div');
+        combinedCard.className = 'result-card combined-result';
+        combinedCard.style.border = '2px solid #8b5cf6'; // Violet border for emphasis
+        combinedCard.style.background = 'linear-gradient(to bottom right, rgba(139, 92, 246, 0.1), rgba(17, 24, 39, 0.8))';
+        combinedCard.style.marginBottom = '2rem'; // Spacing below combined result
+
+        const formattedCombined = marked.parse(data.combined);
+
+        combinedCard.innerHTML = `
+            <div class="result-header">
+                <span class="model-badge" style="background: #8b5cf6; color: white;">✨ Combined Result</span>
+                <div class="result-meta">
+                    <span>Synthesized from ${data.results.length} agents</span>
+                </div>
+            </div>
+            <div class="result-content">
+                <div class="result-text">${formattedCombined}</div>
+            </div>
+        `;
+        container.appendChild(combinedCard);
+    }
+
+    // 2. Display Individual Results
+    const agentsHeader = document.createElement('h4');
+    agentsHeader.textContent = 'Individual Agent Outputs';
+    agentsHeader.style.marginTop = '1rem';
+    agentsHeader.style.marginBottom = '1rem';
+    agentsHeader.style.color = '#94a3b8';
+    container.appendChild(agentsHeader);
+
+    // Create Grid for Individual Results
+    const gridContainer = document.createElement('div');
+    gridContainer.className = 'results-grid';
+    container.appendChild(gridContainer);
+
     data.results.forEach((result, idx) => {
         const card = document.createElement('div');
         card.className = 'result-card';
@@ -211,6 +261,9 @@ function displayResults(data) {
         let response = result.response || result.error || 'No response';
         const latency = result.latency ? result.latency.toFixed(2) : '0.00';
         const tokens = result.tokens || 0;
+
+        // Task Description (if available)
+        const taskDesc = result.description ? `<div style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px dashed rgba(148, 163, 184, 0.2);"><strong>Task:</strong> ${result.description}</div>` : '';
 
         // Truncate long responses
         const MAX_LENGTH = 600;
@@ -229,6 +282,7 @@ function displayResults(data) {
                 </div>
             </div>
             <div class="result-content">
+                ${taskDesc}
                 <div class="result-text" id="text-${idx}">${formattedText}</div>
                 ${isTruncated ? `
                     <button class="example-btn" style="margin-top: 1rem; font-size: 0.8rem;" onclick="toggleText(${idx})">
@@ -238,7 +292,7 @@ function displayResults(data) {
             </div>
         `;
 
-        container.appendChild(card);
+        gridContainer.appendChild(card);
     });
 
     document.getElementById('results-display').style.display = 'block';

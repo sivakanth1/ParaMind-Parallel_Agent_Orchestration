@@ -42,101 +42,101 @@ class Controller:
         # Improved prompt with few-shot examples
         system_prompt = """You are an expert task analyzer. Decide execution mode and output ONLY valid JSON.
 
-AVAILABLE MODELS (use ONLY these exact names):
-- llama-3.3-70b-versatile
-- llama-3.1-8b-instant
+        AVAILABLE MODELS (use ONLY these exact names):
+        - llama-3.3-70b-versatile
+        - llama-3.1-8b-instant
 
-MODE A - Data Parallel (Same prompt, multiple models):
-- Comparisons: "Compare X vs Y"
-- Multiple perspectives: "What do experts think about..."
-- Variations: "Generate 3 different versions of..."
+        MODE A - Data Parallel (Same prompt, multiple models):
+        - Comparisons: "Compare X vs Y"
+        - Multiple perspectives: "What do experts think about..."
+        - Variations: "Generate 3 different versions of..."
 
-MODE B - Instruction Parallel (Decompose into subtasks):
-- Multi-component requests: "Plan trip with budget AND attractions AND food"
-- Independent research: "Research history, current state, and future of X"
-- Separate deliverables: "Create workout plan, meal plan, and schedule"
-- Dependent tasks: "Research X then write a summary" (Task 2 depends on Task 1)
+        MODE B - Instruction Parallel (Decompose into subtasks):
+        - Multi-component requests: "Plan trip with budget AND attractions AND food"
+        - Independent research: "Research history, current state, and future of X"
+        - Separate deliverables: "Create workout plan, meal plan, and schedule"
+        - Dependent tasks: "Research X then write a summary" (Task 2 depends on Task 1)
 
-EXAMPLES - Use ONLY the available models listed above:
+        EXAMPLES - Use ONLY the available models listed above:
 
-Input: "Compare Python vs JavaScript"
-Output:
-{
-  "mode": "A",
-  "reasoning": "Comparison task requires multiple perspectives",
-  "plan": {
-    "models": ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
-  }
-}
+        Input: "Compare Python vs JavaScript"
+        Output:
+        {
+          "mode": "A",
+          "reasoning": "Comparison task requires multiple perspectives",
+          "plan": {
+            "models": ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+          }
+        }
 
-Input: "Plan 3-day Tokyo trip with budget, attractions, and food"
-Output:
-{
-  "mode": "B",
-  "reasoning": "Request has 3 independent components that can run in parallel",
-  "plan": {
-    "subtasks": [
-      {
-        "id": 1,
-        "description": "Create detailed 3-day budget breakdown for Tokyo trip",
-        "model": "llama-3.3-70b-versatile",
-        "depends_on": []
-      },
-      {
-        "id": 2,
-        "description": "List top attractions for a 3-day Tokyo itinerary with timing",
-        "model": "llama-3.1-8b-instant",
-        "depends_on": []
-      },
-      {
-        "id": 3,
-        "description": "Recommend restaurants and food experiences in Tokyo",
-        "model": "llama-3.3-70b-versatile",
-        "depends_on": []
-      }
-    ]
-  }
-}
+        Input: "Plan 3-day Tokyo trip with budget, attractions, and food"
+        Output:
+        {
+          "mode": "B",
+          "reasoning": "Request has 3 independent components that can run in parallel",
+          "plan": {
+            "subtasks": [
+              {
+                "id": 1,
+                "description": "Create detailed 3-day budget breakdown for Tokyo trip",
+                "model": "llama-3.3-70b-versatile",
+                "depends_on": []
+              },
+              {
+                "id": 2,
+                "description": "List top attractions for a 3-day Tokyo itinerary with timing",
+                "model": "llama-3.1-8b-instant",
+                "depends_on": []
+              },
+              {
+                "id": 3,
+                "description": "Recommend restaurants and food experiences in Tokyo",
+                "model": "llama-3.3-70b-versatile",
+                "depends_on": []
+              }
+            ]
+          }
+        }
 
-Input: "Research the history of Bitcoin and then write a summary based on that research"
-Output:
-{
-  "mode": "B",
-  "reasoning": "Sequential task: Summary depends on Research",
-  "plan": {
-    "subtasks": [
-      {
-        "id": 1,
-        "description": "Research the detailed history and origins of Bitcoin",
-        "model": "llama-3.3-70b-versatile",
-        "depends_on": []
-      },
-      {
-        "id": 2,
-        "description": "Write a concise summary of Bitcoin's history based on the research",
-        "model": "llama-3.3-70b-versatile",
-        "depends_on": [1]
-      }
-    ]
-  }
-}
+        Input: "Research the history of Bitcoin and then write a summary based on that research"
+        Output:
+        {
+          "mode": "B",
+          "reasoning": "Sequential task: Summary depends on Research",
+          "plan": {
+            "subtasks": [
+              {
+                "id": 1,
+                "description": "Research the detailed history and origins of Bitcoin",
+                "model": "llama-3.3-70b-versatile",
+                "depends_on": []
+              },
+              {
+                "id": 2,
+                "description": "Write a concise summary of Bitcoin's history based on the research",
+                "model": "llama-3.3-70b-versatile",
+                "depends_on": [1]
+              }
+            ]
+          }
+        }
 
-CRITICAL RULES:
-1. Output ONLY valid JSON with NO markdown, NO code blocks, NO explanations
-2. ALWAYS include both "mode" and "plan" keys
-3. Mode A: "plan" must have "models" array - use ONLY 2 models from the available list
-4. Mode B: "plan" must have "subtasks" array with 2-5 subtasks
-5. Each subtask MUST have: id, description, model, and depends_on (array of IDs)
-6. NEVER invent model names - use ONLY: llama-3.3-70b-versatile, llama-3.1-8b-instant
-7. If uncertain, choose Mode A (safer default)
+        CRITICAL RULES:
+        1. Output ONLY valid JSON with NO markdown, NO code blocks, NO explanations
+        2. ALWAYS include both "mode" and "plan" keys
+        3. Mode A: "plan" must have "models" array - use ONLY 2 models from the available list
+        4. Mode B: "plan" must have "subtasks" array with 2-5 subtasks
+        5. Each subtask MUST have: id, description, model, and depends_on (array of IDs)
+        6. NEVER invent model names - use ONLY: llama-3.3-70b-versatile, llama-3.1-8b-instant
+        7. If uncertain, choose Mode A (safer default)
 
-Now analyze this request and respond with ONLY the JSON:"""
+        Now analyze this request and respond with ONLY the JSON:"""
 
         result = await self.client.call_llm(
             model=self.model,
             prompt=user_prompt,
             system_prompt=system_prompt,
-            temperature=0.0,  # Changed from 0.1 to 0.0 for maximum consistency
+            temperature=0.0,
             max_tokens=1000
         )
         
@@ -374,93 +374,66 @@ Now analyze this request and respond with ONLY the JSON:"""
         
         # Comparison indicators
         comparison_patterns = [
-            r'\bcompare\b', r'\bversus\b', r'\bvs\.?\b',
-            r'\bbetter\b', r'\bwhich\b', r'\bdifference\b',
-            r'\bpros and cons\b', r'\badvantages?\b'
+            r'\\bcompare\\b', r'\\bversus\\b', r'\\bvs\\.?\\b',
+            r'\\bbetter\\b', r'\\bwhich\\b', r'\\bdifference\\b',
+            r'\\bpros and cons\\b', r'\\badvantages?\\b'
         ]
         is_comparison = any(re.search(p, prompt_lower) for p in comparison_patterns)
         
         # Component detection
-        and_count = len(re.findall(r'\band\b', prompt_lower))
+        and_count = len(re.findall(r'\\band\\b', prompt_lower))
         comma_count = prompt_lower.count(',')
         
         # Task indicators
         task_verbs = ['plan', 'create', 'design', 'list', 'research', 
                       'analyze', 'develop', 'write', 'generate']
-        task_count = sum(1 for verb in task_verbs if verb in prompt_lower)
+        verb_count = sum(1 for v in task_verbs if v in prompt_lower)
         
-        # Estimate independent components
-        component_count = 0
-        if and_count >= 2:
-            component_count = and_count + 1
-        elif comma_count >= 2:
-            component_count = comma_count + 1
-        elif task_count >= 2:
-            component_count = task_count
-        
+        # Estimate component count based on linguistic markers
+        component_count = 1
+        if and_count > 0:
+            component_count += and_count
+        if comma_count > 1:
+            component_count = max(component_count, comma_count + 1)
+            
         return {
             "is_comparison": is_comparison,
-            "and_count": and_count,
-            "comma_count": comma_count,
-            "task_count": task_count,
-            "component_count": component_count
+            "component_count": component_count,
+            "verb_count": verb_count
         }
     
     def _create_mode_a_plan(self, reasoning: str) -> Dict:
-        """Create Mode A plan"""
-        plan = {
+        """Create a default Mode A plan"""
+        return {
             "mode": "A",
             "reasoning": reasoning,
             "plan": {
                 "models": ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
             }
         }
-        logger.info(f"📋 Created Mode A plan: {reasoning}")
-        return plan
-    
+        
     def _create_mode_b_plan(self, prompt: str, analysis: Dict) -> Dict:
-        """Create Mode B plan by decomposing prompt"""
-        
-        logger.debug(f"Attempting to decompose prompt based on analysis")
-        
-        # Try to split by 'and' or commas
-        if analysis["and_count"] >= 2:
-            parts = [p.strip() for p in re.split(r'\band\b', prompt, flags=re.IGNORECASE)]
-            logger.debug(f"Split by 'and': {len(parts)} parts")
-        elif analysis["comma_count"] >= 2:
-            parts = [p.strip() for p in prompt.split(',')]
-            logger.debug(f"Split by comma: {len(parts)} parts")
-        else:
-            logger.warning("Cannot decompose: insufficient separators")
-            return self._create_mode_a_plan("Cannot decompose into independent tasks")
-        
-        # Clean and limit to 5 parts
-        parts = [p for p in parts if len(p) > 10][:5]
-        logger.debug(f"After cleaning: {len(parts)} valid parts")
+        """Create a default Mode B plan based on analysis"""
+        # Simple heuristic to split tasks
+        parts = re.split(r'\\band\\b|,\\s*', prompt)
+        parts = [p.strip() for p in parts if len(p.strip()) > 10]
         
         if len(parts) < 2:
-            logger.warning("Decomposition resulted in < 2 subtasks")
-            return self._create_mode_a_plan("Decomposition resulted in too few subtasks")
-        
-        # Create subtasks
+            return self._create_mode_a_plan("Failed to decompose prompt, falling back to Mode A")
+            
         subtasks = []
-        for i, part in enumerate(parts, 1):
-            model = "llama-3.3-70b-versatile" if i % 2 == 1 else "llama-3.1-8b-instant"
+        for i, part in enumerate(parts):
             subtasks.append({
-                "id": i,
+                "id": i + 1,
                 "description": part,
-                "model": model,
-                "depends_on": []
+                "model": "llama-3.3-70b-versatile",
+                "depends_on": []  # Default to parallel
             })
-            logger.debug(f"Subtask {i}: '{part[:50]}...' → {model}")
-        
-        plan = {
+            
+        return {
             "mode": "B",
-            "reasoning": f"Detected {len(parts)} independent components",
+            "reasoning": f"Decomposed into {len(subtasks)} parallel tasks based on semantic analysis",
             "plan": {
                 "subtasks": subtasks
             }
         }
-        
-        logger.success(f"📋 Created Mode B plan with {len(subtasks)} subtasks")
-        return plan

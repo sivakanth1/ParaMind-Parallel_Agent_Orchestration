@@ -38,8 +38,8 @@ Provide a comprehensive summary that captures key insights from all models."""
         result = await self.client.call_llm(
            # model="gpt-3.5-turbo",
             model="llama-3.1-8b-instant",
-            prompt=summary_prompt,
-            max_tokens=500
+            prompt=summary_prompt
+            # No max_tokens limit - allow comprehensive summaries
         )
         
         return result["response"]
@@ -67,7 +67,7 @@ Best response number:"""
             model="llama-3.1-8b-instant",
             prompt=judge_prompt,
             temperature=0.1,
-            max_tokens=10
+            max_tokens=10  # Keep short for best-of-n judgment (just need a number)
         )
         
         try:
