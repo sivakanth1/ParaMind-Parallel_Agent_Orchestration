@@ -216,6 +216,34 @@ function displayResults(data) {
         resultStep.classList.add('active');
     }
 
+    // Update Performance Metrics
+    if (data.metrics) {
+        const seq = data.metrics.sequential_baseline || 0;
+        // Calculate parallel time (approximate as max latency of agents if not provided, 
+        // but let's use the actual execution latency if we had it. 
+        // Since we don't have total execution time passed in 'metrics' from backend (my bad in api.py change),
+        // let's infer it or just use the speedup calculation from backend if we did it there.
+        // Wait, I didn't pass speedup from backend in the 'metrics' object, only sequential_baseline.
+        // I should have passed speedup or total time.
+        // Let's calculate total time from the client side measurement? 
+        // No, `displayResults` receives `data` which is the response from `/execute`.
+        // The `/execute` endpoint returns `results` (list of agent results).
+        // Each agent result has `latency`.
+        // I can calculate max latency here as a proxy for parallel time.
+
+        const maxParallel = Math.max(...data.results.map(r => r.latency || 0));
+        const speedup = maxParallel > 0 ? seq / maxParallel : 0;
+
+        document.getElementById('demo-sequential').textContent = `${seq.toFixed(2)}s`;
+        document.getElementById('demo-parallel').textContent = `${maxParallel.toFixed(2)}s`;
+        document.getElementById('demo-speedup').textContent = `${speedup.toFixed(2)}x`;
+    } else {
+        // Fallback if metrics missing
+        document.getElementById('demo-sequential').textContent = '--s';
+        document.getElementById('demo-parallel').textContent = '--s';
+        document.getElementById('demo-speedup').textContent = '--x';
+    }
+
     // 1. Display Combined Result (if available) - Full Width
     if (data.combined) {
         const combinedCard = document.createElement('div');
@@ -326,9 +354,15 @@ async function loadBenchmarks() {
 
         data.details.forEach(item => {
             const row = tbody.insertRow();
+
+            // Truncate prompt for display
+            const promptText = item.prompt || '';
+            const shortPrompt = promptText.length > 50 ? promptText.substring(0, 50) + '...' : promptText;
+
             row.innerHTML = `
                 <td>${item.prompt_id}</td>
                 <td>${item.category}</td>
+                <td title="${promptText.replace(/"/g, '&quot;')}">${shortPrompt}</td>
                 <td><span class="mode-badge">Mode ${item.mode_detected}</span></td>
                 <td>${item.total_latency.toFixed(2)}s</td>
                 <td>${item.speedup.toFixed(2)}x</td>

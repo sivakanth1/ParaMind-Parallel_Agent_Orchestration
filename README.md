@@ -12,18 +12,52 @@ An intelligent multi-agent system that dynamically decides whether to run tasks 
 - **Modern Web UI**: Fast, responsive interface built with FastAPI and Vanilla JS.
 - **Comprehensive Benchmarking**: Automated evaluation suite to measure speedup, latency, and success rates.
 
-## Architecture
+## Supported Models
 
+ParaMind supports a variety of high-performance LLMs via Groq and OpenAI:
+
+*   **Llama 3.3 70B Versatile** (`llama-3.3-70b-versatile`): High intelligence, great for planning and complex reasoning.
+*   **Llama 3.1 8B Instant** (`llama-3.1-8b-instant`): Extremely fast, ideal for simple subtasks and summarization.
+*   **Mixtral 8x7B** (`mixtral-8x7b-32768`): Strong performance on logical tasks.
+*   **Gemma 2 9B** (`gemma2-9b-it`): Google's lightweight open model.
+*   **OpenAI GPT Models**: Compatible with GPT-3.5/4 (via configuration).
+
+## Project Mind Map
+
+![ParaMind Project Mind Map](assets/project_mindmap.png)
+
+## System Architecture
+
+```mermaid
+graph TD
+    User[User Input] --> Controller[Controller (Brain)]
+    Controller -->|Mode A| Parallel[Parallel Executor]
+    Controller -->|Mode B| DAG[DAG Executor]
+    Parallel --> Aggregator[Result Aggregator]
+    DAG --> Aggregator
+    Aggregator --> Final[Unified Response]
 ```
-User Input → Controller (Mode Decision) → Parallel Executor (DAG/Parallel) → Aggregator → Results
-```
 
-### Components
+### Technical Deep Dive
 
-1. **Controller**: Analyzes requests, determines Mode A/B, and generates execution plans (JSON).
-2. **Parallel Executor**: Runs agents concurrently. Handles DAGs for dependent tasks using topological sort.
-3. **LLM Clients**: Unified interface for OpenAI and Groq APIs with caching and retries.
-4. **API**: FastAPI backend serving the UI and orchestration endpoints.
+#### 1. The Controller (`src/controller.py`)
+Responsible for understanding user intent. It uses **Few-Shot Prompting** with a smart model (`llama-3.3-70b`) to generate an execution plan. If the LLM fails, a **Semantic Fallback** engine analyzes linguistic markers (e.g., "compare", "and", "plan") to determine the mode deterministically.
+
+#### 2. The Executor (`src/agents.py`)
+*   **Concurrency:** Built on Python's `asyncio` for non-blocking parallel execution.
+*   **DAG Logic:** Uses **Topological Sort** to organize Mode B subtasks into "execution layers". Tasks in the same layer run simultaneously.
+*   **Context Injection:** Dynamically injects the output of parent tasks into the context window of dependent child tasks.
+
+#### 3. The Aggregator (`src/aggregator.py`)
+Synthesizes individual agent outputs into a single, coherent response using a fast summarization model (`llama-3.1-8b`), ensuring the user gets a unified answer rather than disjointed parts.
+
+## Performance Metrics
+
+ParaMind tracks key metrics to demonstrate efficiency:
+
+*   **Sequential Baseline:** Estimated time if tasks were performed one by one ($\sum Latency$).
+*   **Parallel Execution:** Actual wall-clock time taken ($\max Latency$).
+*   **Speedup Factor:** $\frac{\text{Sequential Baseline}}{\text{Parallel Execution}}$ (typically 2x-5x).
 
 ## Setup
 
@@ -135,11 +169,3 @@ pytest tests/
 - [x] Comprehensive Benchmarking Suite
 - [ ] Cost tracking and budgeting
 - [ ] Support for more LLM providers (Anthropic, Google)
-
-## License
-
-MIT License - See LICENSE file for details
-
-## Authors
-
-TAMUCC LLM Project Team

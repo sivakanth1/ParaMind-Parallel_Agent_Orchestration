@@ -205,6 +205,35 @@
                     <!-- Results Display -->
                     <div id="results-display" class="results-section" style="display: none;">
                         <h2 class="results-title">✨ Results</h2>
+
+                        <!-- Performance Metrics -->
+                        <div class="metrics-summary-card"
+                            style="margin-bottom: 2rem; background: rgba(17, 24, 39, 0.6); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 12px; padding: 1.5rem;">
+                            <h3 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.1rem; color: #e2e8f0;">🚀
+                                Performance Metrics</h3>
+                            <div
+                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                                <div>
+                                    <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.25rem;">Sequential
+                                        Baseline</div>
+                                    <div id="demo-sequential"
+                                        style="font-size: 1.25rem; font-weight: 600; color: #f8fafc;">--s</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.25rem;">Parallel
+                                        Execution</div>
+                                    <div id="demo-parallel"
+                                        style="font-size: 1.25rem; font-weight: 600; color: #8b5cf6;">--s</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.25rem;">Speedup
+                                    </div>
+                                    <div id="demo-speedup"
+                                        style="font-size: 1.25rem; font-weight: 600; color: #10b981;">--x</div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div id="results-container" class="results-wrapper"></div>
                     </div>
                 </div>
@@ -228,6 +257,7 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Category</th>
+                                <th>Prompt</th>
                                 <th>Mode</th>
                                 <th>Latency</th>
                                 <th>Speedup</th>
@@ -241,7 +271,7 @@
 
         </main>
     </div>
-    <script src="app.js"></script>
+    <script src="app.js?v=3.0"></script>
 </body>
 
 </html>

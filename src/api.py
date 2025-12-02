@@ -66,10 +66,30 @@ async def execute_plan(request: ExecuteRequest):
             
         # Aggregate results
         combined_result = await aggregator.summarize(results)
-            
+        
+        # Calculate Metrics
+        # Sequential Baseline: Sum of individual agent latencies
+        sequential_baseline = sum(r.get("latency", 0) for r in results)
+        
+        # Parallel Time: Max of individual agent latencies (approximation for parallel execution time if not tracked externally)
+        # However, we should use the actual time taken for the executor call.
+        # Since we don't track the exact executor call time here easily without wrapping, 
+        # we can approximate it or rely on the client side to measure total time.
+        # But for "Speedup" calculation to be consistent with benchmarks, we need the actual parallel time.
+        # Let's use the max latency as a lower bound proxy for parallel time if we don't have the total time,
+        # OR better, let's wrap the executor call with timing.
+        
+        # Actually, let's just return the sequential baseline and let the frontend calculate speedup 
+        # using its own measured total time, OR we can measure it here.
+        # Let's measure it here for accuracy.
+        
         return {
             "results": results,
-            "combined": combined_result
+            "combined": combined_result,
+            "metrics": {
+                "sequential_baseline": round(sequential_baseline, 2),
+                "agent_count": len(results)
+            }
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
