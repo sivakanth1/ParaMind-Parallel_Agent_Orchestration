@@ -1,5 +1,5 @@
 import asyncio
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from src.llm_clients import LLMClient
 from loguru import logger
@@ -117,11 +117,46 @@ class ParallelExecutor:
                     logger.error(f"  ❌ Task {task['id']} failed: {result['error']}")
                     failed_task_ids.add(task["id"])
                 else:
+                    # DYNAMIC RE-PLANNING: Check quality and refine if needed
+                    refined_result = await self._evaluate_and_refine(task, result)
+                    if refined_result:
+                        # Update result with refined version
+                        result = refined_result
+                        result["id"] = task["id"]
+                        result["task_id"] = task["id"]
+                        results_map[task["id"]] = result
+                        # Update final_results list (replace the old one)
+                        final_results[-1] = result
+                        logger.info(f"  🔄 Task {task['id']} was dynamically refined")
+                    
                     logger.success(f"  ✅ Task {task['id']} completed")
                 
         success_count = len([r for r in final_results if not r["error"]])
         logger.success(f"✅ Mode B (DAG) complete: {success_count}/{len(subtasks)} successful")
         return final_results
+
+    async def _evaluate_and_refine(self, task: Dict, result: Dict) -> Optional[Dict]:
+        """Check if result is weak and needs refinement"""
+        response = result.get("response", "")
+        
+        # Heuristic 1: Too short
+        if len(response) < 50:
+            logger.warning(f"  ⚠️ Task {task['id']} response too short ({len(response)} chars). Triggering refinement.")
+            return await self.execute_agent(
+                task["model"], 
+                f"{task['description']}\n\nPREVIOUS ATTEMPT WAS TOO SHORT. PLEASE PROVIDE A MORE DETAILED AND COMPREHENSIVE ANSWER."
+            )
+            
+        # Heuristic 2: Apology / Refusal
+        weak_phrases = ["i apologize", "i cannot", "i'm sorry", "as an ai"]
+        if any(phrase in response.lower() for phrase in weak_phrases):
+            logger.warning(f"  ⚠️ Task {task['id']} contained refusal/apology. Triggering refinement.")
+            return await self.execute_agent(
+                task["model"], 
+                f"{task['description']}\n\nPREVIOUS ATTEMPT FAILED. DO NOT APOLOGIZE. JUST PERFORM THE TASK DIRECTLY."
+            )
+            
+        return None
 
     def _topological_sort(self, subtasks: List[Dict]) -> List[List[Dict]]:
         """Sort tasks into execution layers"""

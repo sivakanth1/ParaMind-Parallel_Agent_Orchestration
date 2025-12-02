@@ -73,12 +73,19 @@ async function runDemo() {
         const plan = await analyzeRes.json();
         displayPlan(plan);
 
-        // Step 2: Execute Plan
-        const executeRes = await fetch('/execute', {
+        // Step 2: Execute Plan (with visual simulation)
+        const executePromise = fetch('/execute', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ mode: plan.mode, plan: plan.plan, prompt: prompt })
         });
+
+        // Run simulation concurrently
+        const simulationPromise = simulateExecution(plan);
+
+        // Wait for both (so user sees the full animation at least, or waits for result)
+        const [executeRes, _] = await Promise.all([executePromise, simulationPromise]);
+
         const results = await executeRes.json();
         displayResults(results);
     } catch (error) {
@@ -88,8 +95,6 @@ async function runDemo() {
     }
 }
 
-// Display Plan
-// Display Plan
 // Display Plan
 function displayPlan(plan) {
     console.log("displayPlan called with:", plan);
@@ -146,65 +151,197 @@ function renderVisualPlan(plan) {
         <div class="flow-connector active"></div>
     `;
 
-    // Step 3: Agents
-    let agentsHtml = '<div class="agent-grid">';
-
-    if (plan.mode === 'B' && plan.plan && plan.plan.subtasks) {
-        plan.plan.subtasks.forEach(task => {
-            const shortDesc = task.description.length > 40 ? task.description.substring(0, 40) + '...' : task.description;
-            agentsHtml += `
-                <div class="agent-node active">
-                    <span class="agent-icon">🤖</span>
-                    <div class="agent-details">
-                        <span style="font-weight: 600; font-size: 0.9rem;">${shortDesc}</span>
-                        <span class="agent-model" style="font-size: 0.75rem; opacity: 0.7;">${task.model}</span>
-                    </div>
-                </div>
-            `;
-        });
-    } else {
-        // Mode A or generic
-        const models = plan.plan && plan.plan.models ? plan.plan.models : ['Agent 1', 'Agent 2', 'Agent 3'];
-        models.forEach((model, idx) => {
-            agentsHtml += `
-                <div class="agent-node active">
-                    <span class="agent-icon">🤖</span>
-                    <div class="agent-details">
-                        <span style="font-weight: 600; font-size: 0.9rem;">Agent ${idx + 1}: Processing</span>
-                        <span class="agent-model" style="font-size: 0.75rem; opacity: 0.7;">${model}</span>
-                    </div>
-                </div>
-            `;
-        });
-    }
-    agentsHtml += '</div>';
-
+    // Step 3: Execution (DAG or Parallel)
     flow.innerHTML += `
         <div class="flow-step active">
-            ${agentsHtml}
-            <div class="flow-label" style="margin-top: 1rem;">Execution</div>
+            <div class="flow-icon">⚡</div>
+            <div class="flow-label">Execution</div>
         </div>
-        <div class="flow-connector active"></div>
+        <div class="flow-connector"></div>
     `;
 
-    // Step 4: Results (Pending)
+    // Step 4: Results
     flow.innerHTML += `
         <div class="flow-step" id="flow-result-step">
-            <div class="flow-icon">✨</div>
+            <div class="flow-icon">📝</div>
             <div class="flow-label">Results</div>
         </div>
     `;
 
     container.appendChild(flow);
+
+    // Create Detailed DAG View Container (Below the flow)
+    const dagContainer = document.createElement('div');
+    dagContainer.className = 'dag-detail-view';
+    dagContainer.id = 'dag-detail-view';
+    dagContainer.style.marginTop = '2rem';
+    dagContainer.style.padding = '1rem';
+    dagContainer.style.background = 'rgba(17, 24, 39, 0.5)';
+    dagContainer.style.borderRadius = '12px';
+    dagContainer.style.border = '1px solid rgba(148, 163, 184, 0.1)';
+    container.appendChild(dagContainer);
+
+    // Render Mode Specific Visuals in the new container
+    if (plan.mode === 'B' && plan.plan && plan.plan.subtasks) {
+        // Mode B: DAG Visualization
+        const layers = organizeIntoLayers(plan.plan.subtasks);
+
+        dagContainer.innerHTML = '<h4 style="color: #94a3b8; margin-bottom: 1rem;">Real-Time DAG Monitor</h4>';
+
+        layers.forEach((layer, layerIdx) => {
+            const layerDiv = document.createElement('div');
+            layerDiv.className = 'dag-layer';
+
+            layer.forEach(task => {
+                const node = document.createElement('div');
+                node.className = 'agent-node pending';
+                node.id = `node-${task.id}`;
+                node.innerHTML = `
+                    <div class="node-icon">🤖</div>
+                    <div class="node-info">
+                        <div class="node-id">Agent ${task.id}</div>
+                        <div class="node-desc">${task.description}</div>
+                        <div class="node-model">${task.model}</div>
+                        <div class="node-status">Pending</div>
+                    </div>
+                `;
+                layerDiv.appendChild(node);
+            });
+
+            dagContainer.appendChild(layerDiv);
+
+            // Add arrow if not last layer
+            if (layerIdx < layers.length - 1) {
+                const arrow = document.createElement('div');
+                arrow.className = 'dag-arrow';
+                arrow.innerHTML = '⬇️';
+                dagContainer.appendChild(arrow);
+            }
+        });
+
+    } else {
+        // Mode A: Simple Parallel
+        const models = plan.plan && plan.plan.models ? plan.plan.models : ['1', '2'];
+
+        dagContainer.innerHTML = '<h4 style="color: #94a3b8; margin-bottom: 1rem;">Parallel Execution Monitor</h4>';
+
+        const layerDiv = document.createElement('div');
+        layerDiv.className = 'dag-layer';
+
+        models.forEach((model, idx) => {
+            const node = document.createElement('div');
+            node.className = 'agent-node pending';
+            node.id = `node-a-${idx}`;
+            node.innerHTML = `
+                <div class="node-icon">⚡</div>
+                <div class="node-info">
+                    <div class="node-id">Agent ${idx + 1}</div>
+                    <div class="node-desc">Processing user prompt with ${model}</div>
+                    <div class="node-model">${model}</div>
+                    <div class="node-status">Pending</div>
+                </div>
+            `;
+            layerDiv.appendChild(node);
+        });
+
+        dagContainer.appendChild(layerDiv);
+    }
+}
+
+// Helper: Topological Sort into Layers
+function organizeIntoLayers(subtasks) {
+    const layers = [];
+    let remaining = [...subtasks];
+    let processedIds = new Set();
+
+    while (remaining.length > 0) {
+        const currentLayer = [];
+        const nextRemaining = [];
+
+        remaining.forEach(task => {
+            const deps = task.depends_on || [];
+            if (deps.every(d => processedIds.has(d))) {
+                currentLayer.push(task);
+            } else {
+                nextRemaining.push(task);
+            }
+        });
+
+        if (currentLayer.length === 0) {
+            // Cycle detected or error, just dump rest
+            layers.push(remaining);
+            break;
+        }
+
+        layers.push(currentLayer);
+        currentLayer.forEach(t => processedIds.add(t.id));
+        remaining = nextRemaining;
+    }
+    return layers;
+}
+
+// Simulate Real-Time Progress (Visual only, while waiting for backend)
+async function simulateExecution(plan) {
+    if (plan.mode === 'B' && plan.plan && plan.plan.subtasks) {
+        const layers = organizeIntoLayers(plan.plan.subtasks);
+
+        for (let i = 0; i < layers.length; i++) {
+            const layer = layers[i];
+
+            // Mark layer as processing
+            layer.forEach(task => {
+                const node = document.getElementById(`node-${task.id}`);
+                if (node) {
+                    node.classList.remove('pending');
+                    node.classList.add('processing');
+                    node.querySelector('.node-status').textContent = 'Processing...';
+                }
+            });
+
+            // Wait random time to simulate work (1.5s - 3s per layer)
+            await new Promise(r => setTimeout(r, 1500 + Math.random() * 1500));
+
+            // Mark layer as complete
+            layer.forEach(task => {
+                const node = document.getElementById(`node-${task.id}`);
+                if (node) {
+                    node.classList.remove('processing');
+                    node.classList.add('completed');
+                    node.querySelector('.node-status').textContent = 'Done';
+                }
+            });
+        }
+    } else {
+        // Mode A Simulation
+        const models = plan.plan && plan.plan.models ? plan.plan.models : ['1', '2'];
+
+        // Start all
+        models.forEach((_, idx) => {
+            const node = document.getElementById(`node-a-${idx}`);
+            if (node) {
+                node.classList.remove('pending');
+                node.classList.add('processing');
+                node.querySelector('.node-status').textContent = 'Thinking...';
+            }
+        });
+
+        await new Promise(r => setTimeout(r, 2000));
+
+        // End all
+        models.forEach((_, idx) => {
+            const node = document.getElementById(`node-a-${idx}`);
+            if (node) {
+                node.classList.remove('processing');
+                node.classList.add('completed');
+                node.querySelector('.node-status').textContent = 'Done';
+            }
+        });
+    }
 }
 
 // Display Results - WITH PREMIUM FORMATTING
-// Store results globally to avoid passing large strings in HTML
 let currentResultsData = [];
 
-// Display Results - WITH PREMIUM FORMATTING
-// Display Results - WITH PREMIUM FORMATTING
-// Display Results - WITH PREMIUM FORMATTING
 function displayResults(data) {
     currentResultsData = data.results; // Store for toggling
     const container = document.getElementById('results-container');
@@ -219,18 +356,6 @@ function displayResults(data) {
     // Update Performance Metrics
     if (data.metrics) {
         const seq = data.metrics.sequential_baseline || 0;
-        // Calculate parallel time (approximate as max latency of agents if not provided, 
-        // but let's use the actual execution latency if we had it. 
-        // Since we don't have total execution time passed in 'metrics' from backend (my bad in api.py change),
-        // let's infer it or just use the speedup calculation from backend if we did it there.
-        // Wait, I didn't pass speedup from backend in the 'metrics' object, only sequential_baseline.
-        // I should have passed speedup or total time.
-        // Let's calculate total time from the client side measurement? 
-        // No, `displayResults` receives `data` which is the response from `/execute`.
-        // The `/execute` endpoint returns `results` (list of agent results).
-        // Each agent result has `latency`.
-        // I can calculate max latency here as a proxy for parallel time.
-
         const maxParallel = Math.max(...data.results.map(r => r.latency || 0));
         const speedup = maxParallel > 0 ? seq / maxParallel : 0;
 
