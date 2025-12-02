@@ -72,11 +72,8 @@ async def run_benchmark():
                 )
             elif mode == "B":
                 subtasks = plan["plan"]["subtasks"]
-                # Check for dependencies to decide execution path
-                if any(t.get("depends_on") for t in subtasks):
-                    execution_result = await executor.mode_b_execution_with_deps(subtasks)
-                else:
-                    execution_result = await executor.mode_b_execution(subtasks)
+                # mode_b_execution now handles dependencies automatically
+                execution_result = await executor.mode_b_execution(subtasks)
             
             exec_latency = time.time() - exec_start
             total_latency = time.time() - start_time
@@ -138,7 +135,8 @@ async def run_benchmark():
                 "success_rate": success_rate,
                 "failed_agents": failed_agents,
                 "total_tokens": total_tokens,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "error": "" # Ensure error field exists
             }
             
             results.append(result_entry)
@@ -148,8 +146,24 @@ async def run_benchmark():
             logger.error(f"❌ Error running {item['id']}: {e}")
             results.append({
                 "prompt_id": item["id"],
-                "error": str(e),
-                "timestamp": datetime.now().isoformat()
+                "category": item["category"],
+                "prompt": item["prompt"],
+                "mode_detected": "ERROR",
+                "mode_expected": item["expected_mode"],
+                "mode_accuracy": False,
+                "num_agents": 0,
+                "num_layers": 0,
+                "has_dependencies": False,
+                "plan_latency": 0,
+                "exec_latency": 0,
+                "total_latency": 0,
+                "sequential_baseline": 0,
+                "speedup": 0,
+                "success_rate": 0,
+                "failed_agents": 0,
+                "total_tokens": 0,
+                "timestamp": datetime.now().isoformat(),
+                "error": str(e)
             })
 
     # Save Results
@@ -162,7 +176,14 @@ async def run_benchmark():
     # CSV
     csv_path = f"{results_dir}/eval_{timestamp}.csv"
     if results:
-        keys = results[0].keys()
+        # Collect all unique keys from all results
+        all_keys = set()
+        for r in results:
+            all_keys.update(r.keys())
+        
+        # Sort keys for consistent column order
+        keys = sorted(list(all_keys))
+        
         with open(csv_path, "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=keys)
             writer.writeheader()

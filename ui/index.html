@@ -166,8 +166,6 @@
                                     <option value="">Auto (Default)</option>
                                     <option value="llama-3.3-70b-versatile">Llama 3.3 70B</option>
                                     <option value="llama-3.1-8b-instant">Llama 3.1 8B</option>
-                                    <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
-                                    <option value="gemma2-9b-it">Gemma 2 9B</option>
                                 </select>
                             </div>
                             <div class="control-group">
@@ -200,6 +198,23 @@
                         <div id="visual-plan-container"></div>
                         <button class="view-json-btn" onclick="toggleJsonPlan()">Show Raw JSON</button>
                         <div class="plan-details" id="plan-details" style="display: none;"></div>
+                    </div>
+
+                    <!-- Plan Review (Human-in-the-Loop) -->
+                    <div id="plan-review-container" class="plan-review-container" style="display: none;">
+                        <div class="review-header">
+                            <h3><span class="icon">🧐</span> Review Execution Plan</h3>
+                            <p>Review and modify the plan before agents start execution.</p>
+                        </div>
+                        <div class="json-editor-wrapper">
+                            <div id="review-cards-container" class="review-cards-container">
+                                <!-- Cards will be injected here by app.js -->
+                            </div>
+                        </div>
+                        <div class="review-actions">
+                            <button class="btn-secondary" onclick="cancelExecution()">Cancel</button>
+                            <button class="btn-primary" onclick="executeApprovedPlan()">Approve & Execute 🚀</button>
+                        </div>
                     </div>
 
                     <!-- Results Display -->

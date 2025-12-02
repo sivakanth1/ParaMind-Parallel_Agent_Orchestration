@@ -26,23 +26,7 @@ class Settings(BaseSettings):
     available_models: list = [
         "llama-3.3-70b-versatile",   # Best quality
         "llama-3.1-8b-instant",      # Fastest
-        "llama-3-70b-8192",           # Alternative 70B
-        "gemma-7b-it",               # Different architecture
     ]
-    # available_models: list = [
-    #     "llama-3.3-70b-versatile",  # Groq - Best quality
-    #     "llama-3.1-8b-instant",     # Groq - Fastest
-    # ]
-    
-    # # Model Configuration
-    # controller_model: str = "gpt-4-turbo-preview"
-    # available_models: list = [
-    #     "gpt-4-turbo-preview",
-    #     "gpt-3.5-turbo",
-    #     "llama-3.3-70b-versatile",  # Groq - Updated model
-    #     "llama-3.1-8b-instant",      # Groq - Fast and free
-    #     "gemma2-9b-it"               # Groq - Alternative
-    # ]
     
     class Config:
         env_file = ".env"

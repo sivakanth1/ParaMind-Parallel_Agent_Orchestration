@@ -71,24 +71,20 @@ async def execute_plan(request: ExecuteRequest):
         # Sequential Baseline: Sum of individual agent latencies
         sequential_baseline = sum(r.get("latency", 0) for r in results)
         
-        # Parallel Time: Max of individual agent latencies (approximation for parallel execution time if not tracked externally)
-        # However, we should use the actual time taken for the executor call.
-        # Since we don't track the exact executor call time here easily without wrapping, 
-        # we can approximate it or rely on the client side to measure total time.
-        # But for "Speedup" calculation to be consistent with benchmarks, we need the actual parallel time.
-        # Let's use the max latency as a lower bound proxy for parallel time if we don't have the total time,
-        # OR better, let's wrap the executor call with timing.
+        # Parallel Time: Max of individual agent latencies (approximation)
+        parallel_time = max((r.get("latency", 0) for r in results), default=0)
         
-        # Actually, let's just return the sequential baseline and let the frontend calculate speedup 
-        # using its own measured total time, OR we can measure it here.
-        # Let's measure it here for accuracy.
+        # Speedup
+        speedup = sequential_baseline / parallel_time if parallel_time > 0 else 0
         
         return {
-            "results": results,
-            "combined": combined_result,
+            "mode": request.mode,
+            "responses": results,
+            "final_result": combined_result,
             "metrics": {
-                "sequential_baseline": round(sequential_baseline, 2),
-                "agent_count": len(results)
+                "sequential_time": sequential_baseline,
+                "parallel_time": parallel_time,
+                "speedup": speedup
             }
         }
     except Exception as e:
@@ -124,6 +120,25 @@ async def get_metrics():
         }
     except Exception as e:
         return {"error": str(e)}
+
+@app.get("/benchmarks")
+async def get_benchmarks():
+    """Get detailed benchmark history"""
+    try:
+        # Find latest json result in benchmarks/results
+        list_of_files = glob.glob('benchmarks/results/*.json') 
+        if not list_of_files:
+            return []
+            
+        latest_file = max(list_of_files, key=os.path.getctime)
+        
+        with open(latest_file, 'r') as f:
+            data = json.load(f)
+            
+        return data
+    except Exception as e:
+        print(f"Error loading benchmarks: {e}")
+        return []
 
 # Serve Static Files (CSS, JS, etc.) from /ui directory
 # Mount static files BEFORE the root route

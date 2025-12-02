@@ -88,28 +88,23 @@ class ParallelExecutor:
                 else:
                     executable_tasks.append(task)
             
-            if not executable_tasks:
-                continue
-            
-            # Prepare tasks for this layer
-            layer_coroutines = []
+            # Execute layer concurrently
+            layer_tasks = []
             for task in executable_tasks:
                 # Build context from dependencies
                 context = self._build_context(task, results_map)
-                prompt_with_context = f"{context}\n\nTask: {task['description']}" if context else task['description']
+                full_prompt = f"Context:\n{context}\n\nTask:\n{task['description']}" if context else task['description']
                 
-                layer_coroutines.append(
-                    self.execute_agent(task["model"], prompt_with_context)
-                )
+                layer_tasks.append(self.execute_agent(task["model"], full_prompt))
             
-            # Execute layer
-            layer_results = await asyncio.gather(*layer_coroutines)
+            layer_results = await asyncio.gather(*layer_tasks)
             
             # Store results
             for task, result in zip(executable_tasks, layer_results):
                 # Add task metadata to result for tracking
                 result["id"] = task["id"]
                 result["task_id"] = task["id"]
+                result["task"] = task["description"]
                 results_map[task["id"]] = result
                 final_results.append(result)
                 
@@ -124,19 +119,18 @@ class ParallelExecutor:
                         result = refined_result
                         result["id"] = task["id"]
                         result["task_id"] = task["id"]
+                        result["task"] = task["description"]
                         results_map[task["id"]] = result
                         # Update final_results list (replace the old one)
                         final_results[-1] = result
                         logger.info(f"  🔄 Task {task['id']} was dynamically refined")
                     
                     logger.success(f"  ✅ Task {task['id']} completed")
-                
-        success_count = len([r for r in final_results if not r["error"]])
-        logger.success(f"✅ Mode B (DAG) complete: {success_count}/{len(subtasks)} successful")
+                    
         return final_results
 
     async def _evaluate_and_refine(self, task: Dict, result: Dict) -> Optional[Dict]:
-        """Check if result is weak and needs refinement"""
+        """Check if result is satisfactory, if not, re-run with better prompt"""
         response = result.get("response", "")
         
         # Heuristic 1: Too short

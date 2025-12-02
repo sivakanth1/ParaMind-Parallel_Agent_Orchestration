@@ -73,27 +73,144 @@ async function runDemo() {
         const plan = await analyzeRes.json();
         displayPlan(plan);
 
-        // Step 2: Execute Plan (with visual simulation)
+        // Step 2: Human-in-the-Loop Review
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('plan-review-container').style.display = 'block';
+
+        // Store plan globally
+        window.currentPlan = plan;
+        window.currentPrompt = prompt;
+
+        // Generate Review Cards
+        const container = document.getElementById('review-cards-container');
+        container.innerHTML = '';
+
+        if (plan.mode === 'B') {
+            plan.plan.subtasks.forEach((task, index) => {
+                const card = document.createElement('div');
+                card.className = 'review-card';
+                card.innerHTML = `
+                    <div class="review-card-header">
+                        <span class="review-agent-id">Agent ${task.id}</span>
+                    </div>
+                    <div class="review-input-group">
+                        <label class="review-label">Task Description</label>
+                        <input type="text" class="review-input task-desc-input" data-id="${task.id}" value="${task.description}">
+                    </div>
+                    <div class="review-input-group">
+                        <label class="review-label">LLM Model</label>
+                        <select class="review-select task-model-input" data-id="${task.id}">
+                            <option value="llama-3.3-70b-versatile" ${task.model === 'llama-3.3-70b-versatile' ? 'selected' : ''}>Llama 3.3 70B</option>
+                            <option value="llama-3.1-8b-instant" ${task.model === 'llama-3.1-8b-instant' ? 'selected' : ''}>Llama 3.1 8B</option>
+                        </select>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        } else {
+            // Mode A
+            const models = plan.plan.models || ['llama-3.1-8b-instant', 'llama-3.1-8b-instant'];
+            models.forEach((model, index) => {
+                const card = document.createElement('div');
+                card.className = 'review-card';
+                card.innerHTML = `
+                    <div class="review-card-header">
+                        <span class="review-agent-id">Agent ${index + 1}</span>
+                    </div>
+                    <div class="review-input-group">
+                        <label class="review-label">LLM Model</label>
+                        <select class="review-select mode-a-model-input" data-index="${index}">
+                            <option value="llama-3.3-70b-versatile" ${model === 'llama-3.3-70b-versatile' ? 'selected' : ''}>Llama 3.3 70B</option>
+                            <option value="llama-3.1-8b-instant" ${model === 'llama-3.1-8b-instant' ? 'selected' : ''}>Llama 3.1 8B</option>
+                        </select>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+    } catch (error) {
+        alert('Error: ' + error.message);
+        document.getElementById('loading').style.display = 'none';
+    }
+}
+
+// Execute Approved Plan
+async function executeApprovedPlan() {
+    try {
+        const plan = window.currentPlan;
+
+        // Update plan with values from UI
+        if (plan.mode === 'B') {
+            const descInputs = document.querySelectorAll('.task-desc-input');
+            const modelInputs = document.querySelectorAll('.task-model-input');
+
+            descInputs.forEach(input => {
+                const id = input.dataset.id;
+                // Use loose equality (==) to handle string/number mismatch
+                const task = plan.plan.subtasks.find(t => t.id == id);
+                if (task) {
+                    console.log(`Updating task ${id} description: ${input.value}`);
+                    task.description = input.value;
+                }
+            });
+
+            modelInputs.forEach(input => {
+                const id = input.dataset.id;
+                // Use loose equality (==) to handle string/number mismatch
+                const task = plan.plan.subtasks.find(t => t.id == id);
+                if (task) {
+                    console.log(`Updating task ${id} model: ${input.value}`);
+                    task.model = input.value;
+                }
+            });
+        } else {
+            // Mode A
+            const modelInputs = document.querySelectorAll('.mode-a-model-input');
+            const newModels = [];
+            modelInputs.forEach(input => {
+                newModels.push(input.value);
+            });
+            plan.plan.models = newModels;
+        }
+
+        // Hide review, show loading
+        document.getElementById('plan-review-container').style.display = 'none';
+        document.getElementById('loading').style.display = 'flex';
+
+        // Re-render visual plan in case it changed
+        displayPlan(plan);
+
+        // Execute Plan
         const executePromise = fetch('/execute', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mode: plan.mode, plan: plan.plan, prompt: prompt })
+            body: JSON.stringify({ mode: plan.mode, plan: plan.plan, prompt: window.currentPrompt })
         });
 
-        // Run simulation concurrently
+        // Run simulation
         const simulationPromise = simulateExecution(plan);
 
-        // Wait for both (so user sees the full animation at least, or waits for result)
         const [executeRes, _] = await Promise.all([executePromise, simulationPromise]);
-
         const results = await executeRes.json();
         displayResults(results);
+
     } catch (error) {
-        alert('Error: ' + error.message);
+        alert('Error during execution: ' + error.message);
     } finally {
         document.getElementById('loading').style.display = 'none';
     }
 }
+
+
+// Cancel Execution
+function cancelExecution() {
+    document.getElementById('plan-review-container').style.display = 'none';
+    document.getElementById('plan-display').style.display = 'none';
+    document.getElementById('results-display').style.display = 'none';
+    document.getElementById('loading').style.display = 'none';
+}
+
 
 // Display Plan
 function displayPlan(plan) {
@@ -212,326 +329,251 @@ function renderVisualPlan(plan) {
 
             // Add arrow if not last layer
             if (layerIdx < layers.length - 1) {
-                const arrow = document.createElement('div');
-                arrow.className = 'dag-arrow';
-                arrow.innerHTML = '⬇️';
-                dagContainer.appendChild(arrow);
+                const arrowDiv = document.createElement('div');
+                arrowDiv.className = 'dag-arrow';
+                arrowDiv.innerHTML = '➜';
+                dagContainer.appendChild(arrowDiv);
             }
         });
 
     } else {
-        // Mode A: Simple Parallel
-        const models = plan.plan && plan.plan.models ? plan.plan.models : ['1', '2'];
+        // Mode A: Parallel Visualization
+        dagContainer.innerHTML = '<h4 style="color: #94a3b8; margin-bottom: 1rem;">Parallel Agent Monitor</h4>';
+        const agentGrid = document.createElement('div');
+        agentGrid.className = 'agent-grid';
 
-        dagContainer.innerHTML = '<h4 style="color: #94a3b8; margin-bottom: 1rem;">Parallel Execution Monitor</h4>';
-
-        const layerDiv = document.createElement('div');
-        layerDiv.className = 'dag-layer';
-
-        models.forEach((model, idx) => {
+        const models = plan.plan.models || ['llama-3.1-8b-instant', 'llama-3.1-8b-instant'];
+        models.forEach((model, index) => {
             const node = document.createElement('div');
             node.className = 'agent-node pending';
-            node.id = `node-a-${idx}`;
+            node.id = `node-${index + 1}`;
             node.innerHTML = `
-                <div class="node-icon">⚡</div>
+                <div class="node-icon">🤖</div>
                 <div class="node-info">
-                    <div class="node-id">Agent ${idx + 1}</div>
-                    <div class="node-desc">Processing user prompt with ${model}</div>
+                    <div class="node-id">Agent ${index + 1}</div>
+                    <div class="node-desc">Processing full prompt</div>
                     <div class="node-model">${model}</div>
                     <div class="node-status">Pending</div>
                 </div>
             `;
-            layerDiv.appendChild(node);
+            agentGrid.appendChild(node);
         });
-
-        dagContainer.appendChild(layerDiv);
+        dagContainer.appendChild(agentGrid);
     }
 }
 
-// Helper: Topological Sort into Layers
-function organizeIntoLayers(subtasks) {
+// Helper to organize tasks into layers for DAG
+function organizeIntoLayers(tasks) {
     const layers = [];
-    let remaining = [...subtasks];
-    let processedIds = new Set();
+    const visited = new Set();
+    let currentLayer = tasks.filter(t => !t.dependencies || t.dependencies.length === 0);
 
-    while (remaining.length > 0) {
-        const currentLayer = [];
-        const nextRemaining = [];
-
-        remaining.forEach(task => {
-            const deps = task.depends_on || [];
-            if (deps.every(d => processedIds.has(d))) {
-                currentLayer.push(task);
-            } else {
-                nextRemaining.push(task);
-            }
-        });
-
-        if (currentLayer.length === 0) {
-            // Cycle detected or error, just dump rest
-            layers.push(remaining);
-            break;
-        }
-
+    while (currentLayer.length > 0) {
         layers.push(currentLayer);
-        currentLayer.forEach(t => processedIds.add(t.id));
-        remaining = nextRemaining;
+        currentLayer.forEach(t => visited.add(t.id));
+
+        // Find next layer: tasks whose dependencies are all visited
+        currentLayer = tasks.filter(t =>
+            !visited.has(t.id) &&
+            t.dependencies &&
+            t.dependencies.every(depId => visited.has(depId))
+        );
     }
     return layers;
 }
 
-// Simulate Real-Time Progress (Visual only, while waiting for backend)
+// Simulate Execution (Visuals only)
 async function simulateExecution(plan) {
-    if (plan.mode === 'B' && plan.plan && plan.plan.subtasks) {
-        const layers = organizeIntoLayers(plan.plan.subtasks);
+    const steps = document.querySelectorAll('.flow-step');
+    const connectors = document.querySelectorAll('.flow-connector');
 
-        for (let i = 0; i < layers.length; i++) {
-            const layer = layers[i];
+    // Step 3: Execution Active
+    steps[2].classList.add('active');
+    if (connectors[2]) connectors[2].classList.add('active');
 
-            // Mark layer as processing
+    // Simulate Agent Progress
+    if (plan.mode === 'B') {
+        const tasks = plan.plan.subtasks;
+        // Simple simulation: iterate through layers
+        const layers = organizeIntoLayers(tasks);
+
+        for (const layer of layers) {
+            await new Promise(r => setTimeout(r, 1000)); // Simulate work
             layer.forEach(task => {
                 const node = document.getElementById(`node-${task.id}`);
                 if (node) {
                     node.classList.remove('pending');
-                    node.classList.add('processing');
-                    node.querySelector('.node-status').textContent = 'Processing...';
-                }
-            });
-
-            // Wait random time to simulate work (1.5s - 3s per layer)
-            await new Promise(r => setTimeout(r, 1500 + Math.random() * 1500));
-
-            // Mark layer as complete
-            layer.forEach(task => {
-                const node = document.getElementById(`node-${task.id}`);
-                if (node) {
-                    node.classList.remove('processing');
                     node.classList.add('completed');
-                    node.querySelector('.node-status').textContent = 'Done';
+                    node.querySelector('.node-status').textContent = 'Completed';
                 }
             });
         }
     } else {
-        // Mode A Simulation
-        const models = plan.plan && plan.plan.models ? plan.plan.models : ['1', '2'];
-
-        // Start all
-        models.forEach((_, idx) => {
-            const node = document.getElementById(`node-a-${idx}`);
+        // Mode A
+        const count = (plan.plan.models || []).length;
+        for (let i = 1; i <= count; i++) {
+            await new Promise(r => setTimeout(r, 800));
+            const node = document.getElementById(`node-${i}`);
             if (node) {
                 node.classList.remove('pending');
-                node.classList.add('processing');
-                node.querySelector('.node-status').textContent = 'Thinking...';
-            }
-        });
-
-        await new Promise(r => setTimeout(r, 2000));
-
-        // End all
-        models.forEach((_, idx) => {
-            const node = document.getElementById(`node-a-${idx}`);
-            if (node) {
-                node.classList.remove('processing');
                 node.classList.add('completed');
-                node.querySelector('.node-status').textContent = 'Done';
+                node.querySelector('.node-status').textContent = 'Completed';
             }
+        }
+    }
+
+    // Step 4: Results Active
+    steps[3].classList.add('active');
+}
+
+// Display Results
+function displayResults(results) {
+    const container = document.getElementById('results-container');
+    document.getElementById('results-display').style.display = 'block';
+
+    // Update Metrics
+    if (results.metrics) {
+        document.getElementById('demo-sequential').textContent = `${results.metrics.sequential_time.toFixed(2)}s`;
+        document.getElementById('demo-parallel').textContent = `${results.metrics.parallel_time.toFixed(2)}s`;
+        document.getElementById('demo-speedup').textContent = `${results.metrics.speedup.toFixed(1)}x`;
+    }
+
+    // Render Result Cards
+    if (results.mode === 'B') {
+        // Combined Result
+        container.innerHTML = `
+            <div class="result-card">
+                <div class="result-header">
+                    <h3>🎉 Final Aggregated Result</h3>
+                    <span class="model-badge">Consensus</span>
+                </div>
+                <div class="result-content">${marked.parse(results.final_result)}</div>
+            </div>
+        `;
+
+        // Individual Results (Mode B)
+        const subtasksHeader = document.createElement('h3');
+        subtasksHeader.style.marginTop = '2rem';
+        subtasksHeader.style.marginBottom = '1rem';
+        subtasksHeader.style.color = '#e2e8f0';
+        subtasksHeader.textContent = 'Individual Agent Contributions';
+        container.appendChild(subtasksHeader);
+
+        const gridContainer = document.createElement('div');
+        gridContainer.className = 'results-grid';
+        container.appendChild(gridContainer);
+
+        results.responses.forEach((res) => {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.innerHTML = `
+                <div class="result-header">
+                    <h3>Agent ${res.id}: ${res.task || 'Task'}</h3>
+                    <span class="model-badge">${res.model}</span>
+                </div>
+                <div class="result-content">${marked.parse(res.response)}</div>
+            `;
+            gridContainer.appendChild(card);
+        });
+
+    } else {
+        // Individual Results (Mode A)
+
+        // Combined Result (Synthesis)
+        container.innerHTML = `
+            <div class="result-card">
+                <div class="result-header">
+                    <h3>🎉 Final Aggregated Result</h3>
+                    <span class="model-badge">Synthesis</span>
+                </div>
+                <div class="result-content">${marked.parse(results.final_result)}</div>
+            </div>
+        `;
+
+        const subtasksHeader = document.createElement('h3');
+        subtasksHeader.style.marginTop = '2rem';
+        subtasksHeader.style.marginBottom = '1rem';
+        subtasksHeader.style.color = '#e2e8f0';
+        subtasksHeader.textContent = 'Individual Model Responses';
+        container.appendChild(subtasksHeader);
+
+        const gridContainer = document.createElement('div');
+        gridContainer.className = 'results-grid';
+        container.appendChild(gridContainer);
+
+        results.responses.forEach((res, index) => {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.innerHTML = `
+                <div class="result-header">
+                    <h3>Agent ${index + 1} Response</h3>
+                    <span class="model-badge">${res.model}</span>
+                </div>
+                <div class="result-content">${marked.parse(res.response)}</div>
+            `;
+            gridContainer.appendChild(card);
         });
     }
+
+    // Refresh global metrics
+    loadMetrics();
+    loadBenchmarks();
 }
 
-// Display Results - WITH PREMIUM FORMATTING
-let currentResultsData = [];
-
-function displayResults(data) {
-    currentResultsData = data.results; // Store for toggling
-    const container = document.getElementById('results-container');
-    container.innerHTML = '';
-
-    // Activate the Results step in the flow
-    const resultStep = document.getElementById('flow-result-step');
-    if (resultStep) {
-        resultStep.classList.add('active');
-    }
-
-    // Update Performance Metrics
-    if (data.metrics) {
-        const seq = data.metrics.sequential_baseline || 0;
-        const maxParallel = Math.max(...data.results.map(r => r.latency || 0));
-        const speedup = maxParallel > 0 ? seq / maxParallel : 0;
-
-        document.getElementById('demo-sequential').textContent = `${seq.toFixed(2)}s`;
-        document.getElementById('demo-parallel').textContent = `${maxParallel.toFixed(2)}s`;
-        document.getElementById('demo-speedup').textContent = `${speedup.toFixed(2)}x`;
-    } else {
-        // Fallback if metrics missing
-        document.getElementById('demo-sequential').textContent = '--s';
-        document.getElementById('demo-parallel').textContent = '--s';
-        document.getElementById('demo-speedup').textContent = '--x';
-    }
-
-    // 1. Display Combined Result (if available) - Full Width
-    if (data.combined) {
-        const combinedCard = document.createElement('div');
-        combinedCard.className = 'result-card combined-result';
-        combinedCard.style.border = '2px solid #8b5cf6'; // Violet border for emphasis
-        combinedCard.style.background = 'linear-gradient(to bottom right, rgba(139, 92, 246, 0.1), rgba(17, 24, 39, 0.8))';
-        combinedCard.style.marginBottom = '2rem'; // Spacing below combined result
-
-        const formattedCombined = marked.parse(data.combined);
-
-        combinedCard.innerHTML = `
-            <div class="result-header">
-                <span class="model-badge" style="background: #8b5cf6; color: white;">✨ Combined Result</span>
-                <div class="result-meta">
-                    <span>Synthesized from ${data.results.length} agents</span>
-                </div>
-            </div>
-            <div class="result-content">
-                <div class="result-text">${formattedCombined}</div>
-            </div>
-        `;
-        container.appendChild(combinedCard);
-    }
-
-    // 2. Display Individual Results
-    const agentsHeader = document.createElement('h4');
-    agentsHeader.textContent = 'Individual Agent Outputs';
-    agentsHeader.style.marginTop = '1rem';
-    agentsHeader.style.marginBottom = '1rem';
-    agentsHeader.style.color = '#94a3b8';
-    container.appendChild(agentsHeader);
-
-    // Create Grid for Individual Results
-    const gridContainer = document.createElement('div');
-    gridContainer.className = 'results-grid';
-    container.appendChild(gridContainer);
-
-    data.results.forEach((result, idx) => {
-        const card = document.createElement('div');
-        card.className = 'result-card';
-
-        const modelName = result.model || 'Unknown';
-        let response = result.response || result.error || 'No response';
-        const latency = result.latency ? result.latency.toFixed(2) : '0.00';
-        const tokens = result.tokens || 0;
-
-        // Task Description (if available)
-        const taskDesc = result.description ? `<div style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px dashed rgba(148, 163, 184, 0.2);"><strong>Task:</strong> ${result.description}</div>` : '';
-
-        // Truncate long responses
-        const MAX_LENGTH = 600;
-        const isTruncated = response.length > MAX_LENGTH;
-        const displayText = isTruncated ? response.substring(0, MAX_LENGTH) + '...' : response;
-
-        // Format text using marked.js
-        const formattedText = marked.parse(displayText);
-
-        card.innerHTML = `
-            <div class="result-header">
-                <span class="model-badge">${modelName}</span>
-                <div class="result-meta">
-                    <span title="Latency (seconds)">⏱️ ${latency}s</span>
-                    <span title="Token Usage">🪙 ${tokens}</span>
-                </div>
-            </div>
-            <div class="result-content">
-                ${taskDesc}
-                <div class="result-text" id="text-${idx}">${formattedText}</div>
-                ${isTruncated ? `
-                    <button class="example-btn" style="margin-top: 1rem; font-size: 0.8rem;" onclick="toggleText(${idx})">
-                        Show Full Response
-                    </button>
-                ` : ''}
-            </div>
-        `;
-
-        gridContainer.appendChild(card);
-    });
-
-    document.getElementById('results-display').style.display = 'block';
-}
-
-// Toggle full text
-function toggleText(idx) {
-    const elem = document.getElementById(`text-${idx}`);
-    const btn = event.target;
-    const fullText = currentResultsData[idx].response || currentResultsData[idx].error || '';
-
-    if (btn.textContent.includes('Show Full')) {
-        elem.innerHTML = marked.parse(fullText);
-        btn.textContent = 'Show Less';
-    } else {
-        const short = fullText.substring(0, 600) + '...';
-        elem.innerHTML = marked.parse(short);
-        btn.textContent = 'Show Full Response';
-    }
-}
-
-// Load Benchmarks
+// Load Benchmarks Table
 async function loadBenchmarks() {
     try {
-        const response = await fetch('/metrics');
+        const response = await fetch('/benchmarks');
         const data = await response.json();
-        if (data.error || !data.details) return;
-
         const tbody = document.querySelector('#benchmark-table tbody');
         tbody.innerHTML = '';
 
-        data.details.forEach(item => {
-            const row = tbody.insertRow();
+        // Sort by timestamp desc
+        data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-            // Truncate prompt for display
-            const promptText = item.prompt || '';
-            const shortPrompt = promptText.length > 50 ? promptText.substring(0, 50) + '...' : promptText;
-
+        data.forEach(run => {
+            const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${item.prompt_id}</td>
-                <td>${item.category}</td>
-                <td title="${promptText.replace(/"/g, '&quot;')}">${shortPrompt}</td>
-                <td><span class="mode-badge">Mode ${item.mode_detected}</span></td>
-                <td>${item.total_latency.toFixed(2)}s</td>
-                <td>${item.speedup.toFixed(2)}x</td>
-                <td>${item.success_rate}%</td>
+                <td>#${run.prompt_id}</td>
+                <td>${run.category}</td>
+                <td>${run.prompt.substring(0, 50)}...</td>
+                <td>${run.mode_detected}</td>
+                <td>${run.total_latency.toFixed(2)}s</td>
+                <td>${run.speedup.toFixed(1)}x</td>
+                <td><span class="status-dot" style="display:inline-block"></span></td>
             `;
+            tbody.appendChild(row);
         });
 
-        createChart(data.details);
+        renderChart(data);
     } catch (error) {
         console.error('Failed to load benchmarks:', error);
     }
 }
 
-// Create Chart
-function createChart(data) {
-    const categories = {};
-    data.forEach(item => {
-        if (!categories[item.category]) categories[item.category] = [];
-        categories[item.category].push(item.speedup);
-    });
-
-    const labels = Object.keys(categories);
-    const values = labels.map(cat => {
-        const arr = categories[cat];
-        return arr.reduce((a, b) => a + b, 0) / arr.length;
-    });
-
+function renderChart(data) {
     const ctx = document.getElementById('speedupChart').getContext('2d');
 
-    // Destroy existing chart if it exists
-    if (window.myChart) window.myChart.destroy();
+    // Prepare data (show all runs in chronological order)
+    const chronological = [...data].reverse();
+    const labels = chronological.map(d => `#${d.prompt_id}`);
+    const speedups = chronological.map(d => d.speedup);
+
+    if (window.myChart) {
+        window.myChart.destroy();
+    }
 
     window.myChart = new Chart(ctx, {
-        type: 'bar',
+        type: 'line',
         data: {
             labels: labels,
             datasets: [{
-                label: 'Average Speedup',
-                data: values,
-                backgroundColor: 'rgba(99, 102, 241, 0.5)', // Indigo with opacity
-                borderColor: '#6366f1', // Indigo solid
-                borderWidth: 2,
-                borderRadius: 8,
-                hoverBackgroundColor: '#8b5cf6' // Violet on hover
+                label: 'Speedup Factor',
+                data: speedups,
+                borderColor: '#8b5cf6',
+                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                tension: 0.4,
+                fill: true
             }]
         },
         options: {
@@ -539,28 +581,17 @@ function createChart(data) {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: true,
-                    labels: {
-                        color: '#94a3b8',
-                        font: { family: "'Space Grotesk', sans-serif" }
-                    }
+                    labels: { color: '#94a3b8' }
                 }
             },
             scales: {
                 y: {
-                    beginAtZero: true,
-                    ticks: {
-                        color: '#94a3b8',
-                        font: { family: "'Space Grotesk', sans-serif" }
-                    },
-                    grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                    grid: { color: 'rgba(148, 163, 184, 0.1)' },
+                    ticks: { color: '#94a3b8' }
                 },
                 x: {
-                    ticks: {
-                        color: '#94a3b8',
-                        font: { family: "'Space Grotesk', sans-serif" }
-                    },
-                    grid: { display: false }
+                    grid: { display: false },
+                    ticks: { color: '#94a3b8' }
                 }
             }
         }

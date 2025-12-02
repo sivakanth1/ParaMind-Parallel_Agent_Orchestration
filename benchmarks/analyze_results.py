@@ -21,7 +21,12 @@ def analyze_latest():
     
     # Filter out errors
     if "error" in df.columns:
-        df = df[df["error"].isna()]
+        # Handle both None/NaN and empty strings
+        df = df[df["error"].isna() | (df["error"] == "")]
+
+    if df.empty:
+        print("No successful results to analyze.")
+        return
         
     # Overall Metrics
     total_prompts = len(df)

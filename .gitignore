@@ -62,3 +62,6 @@ dmypy.json
 # Cache
 .cache/
 cache/
+
+#benchmarks
+benchmarks/results
