@@ -468,7 +468,13 @@ function displayResults(results) {
             card.className = 'result-card';
             card.innerHTML = `
                 <div class="result-header">
-                    <h3>Agent ${res.id}: ${res.task || 'Task'}</h3>
+                    <div>
+                        <h3>Agent ${res.id}: ${res.task || 'Task'}</h3>
+                        <div class="result-metrics">
+                            <span>⏱️ ${res.latency}s</span>
+                            <span>📝 ${res.tokens} tokens</span>
+                        </div>
+                    </div>
                     <span class="model-badge">${res.model}</span>
                 </div>
                 <div class="result-content">${marked.parse(res.response)}</div>
@@ -506,7 +512,13 @@ function displayResults(results) {
             card.className = 'result-card';
             card.innerHTML = `
                 <div class="result-header">
-                    <h3>Agent ${index + 1} Response</h3>
+                    <div>
+                        <h3>Agent ${index + 1} Response</h3>
+                        <div class="result-metrics">
+                            <span>⏱️ ${res.latency}s</span>
+                            <span>📝 ${res.tokens} tokens</span>
+                        </div>
+                    </div>
                     <span class="model-badge">${res.model}</span>
                 </div>
                 <div class="result-content">${marked.parse(res.response)}</div>

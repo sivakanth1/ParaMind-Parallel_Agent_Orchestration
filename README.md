@@ -4,7 +4,11 @@
 
 ![ParaMind Project Mind Map](assets/project_mindmap.png)
 
-## 🚀 Key Features
+## Demo Video
+
+[Watch ParaMind Demo Video](assets/ParaMind_demo_video.mp4)
+
+## Key Features
 
 - **Mode A (Data-Parallel)**: Execute the same prompt across multiple LLM models simultaneously for comparison or consensus.
 - **Mode B (Task-Parallel)**: Decompose complex tasks into independent or dependent subtasks (DAG execution).
@@ -14,28 +18,11 @@
 - **High Performance**: Caching layer and parallel execution deliver 2x-5x speedups (up to 100x with cache).
 - **Modern Web UI**: Fast, responsive interface built with FastAPI and Vanilla JS.
 
-## 🏗️ System Architecture
+## System Architecture
 
 The project follows a modern, decoupled client-server architecture.
 
-```mermaid
-graph TD
-    User[User Interface] <-->|REST API| API[FastAPI Backend]
-    
-    subgraph "Backend Core"
-        API --> Controller[Smart Controller]
-        API --> Executor[Parallel Executor]
-        API --> Aggregator[Result Aggregator]
-        
-        Controller -->|Analyze & Plan| LLM[LLM Client]
-        Executor -->|Execute Tasks| LLM
-        Aggregator -->|Synthesize| LLM
-        
-        LLM <-->|Cache Hit/Miss| Cache[Response Cache]
-        LLM <-->|External API| Groq[Groq API]
-        LLM <-->|External API| OpenAI[OpenAI API]
-    end
-```
+![System Architecture](assets/system_architecture.png)
 
 ### Component Analysis
 
@@ -59,7 +46,7 @@ The "Synthesizer". Combines individual agent outputs into a single, coherent res
 *   **Caching:** File-based caching (`.cache/`) drastically reduces latency and cost.
 *   **Resilience:** Implements retries and rate limiting via `tenacity` and `asyncio.Semaphore`.
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 ParaMind-Parallel_Agent_Orchestration/
@@ -87,14 +74,14 @@ ParaMind-Parallel_Agent_Orchestration/
 └── README.md
 ```
 
-## 📊 Benchmark Results
+## Benchmark Results
 
 Latest run (Dec 2, 2025):
 *   **Success Rate:** 100% (25/25 prompts)
 *   **Mode Accuracy:** 100%
 *   **Avg Speedup:** High (>100x due to caching)
 
-## 🛠️ Setup
+## Setup
 
 ### Prerequisites
 - Python 3.11+
@@ -125,7 +112,7 @@ cp .env.example .env
 # Edit .env and add your API keys
 ```
 
-## 🚀 Usage
+## Usage
 
 ### Run the Web Application
 Start the FastAPI server:
@@ -139,13 +126,97 @@ Open your browser at `http://localhost:8000`.
 python benchmarks/run_eval.py
 ```
 
-## 🔮 Roadmap
+## Web Interface Features
 
-- [x] Basic Mode A and Mode B execution
-- [x] DAG-based dependency execution
-- [x] Modern Web UI (FastAPI + JS)
-- [x] Caching layer for responses
-- [x] Advanced error recovery (Retries, Partial Failures)
-- [x] Comprehensive Benchmarking Suite
-- [ ] Cost tracking and budgeting
-- [ ] Support for more LLM providers (Anthropic, Google)
+- **Live Playground**: Test custom prompts with adjustable model selection and agent counts.
+- **Visual Plan Inspector**: View the generated execution plan and dependency graph before execution.
+- **Human-in-the-Loop**: (Optional) Review and modify the plan before agents start working.
+- **Real-time Metrics**: See speedup and latency stats update live as agents complete tasks.
+
+## Under the Hood
+
+### Self-Correcting Controller
+The Controller (`src/controller.py`) doesn't just ask the LLM for a plan; it actively validates the output.
+- **JSON Repair**: Automatically fixes malformed JSON responses.
+- **Cycle Detection**: Prevents circular dependencies in Mode B task graphs.
+- **Semantic Fallback**: If the LLM fails repeatedly, a regex-based heuristic engine takes over to ensure execution never stops.
+
+### Dynamic Agent Refinement
+The Executor (`src/agents.py`) monitors agent outputs in real-time:
+- **Quality Checks**: Detects if a response is too short or apologetic (e.g., "I apologize, but...").
+- **Auto-Retry**: Automatically re-prompts the model with stricter instructions to get a proper response, ensuring high-quality outputs without user intervention.
+
+## API Reference
+
+The backend provides RESTful endpoints for integration:
+
+### `POST /analyze`
+Analyzes a prompt and returns an execution plan.
+- **Body**: `{"prompt": "your prompt here"}`
+- **Returns**: JSON object with `mode` (A/B) and `plan` details.
+
+### `POST /execute`
+Executes a generated plan.
+- **Body**: 
+  ```json
+  {
+    "mode": "B",
+    "prompt": "original prompt",
+    "plan": { ... }
+  }
+  ```
+- **Returns**: Aggregated results and performance metrics.
+
+### `GET /metrics`
+Returns the latest benchmark performance metrics including success rate and speedup factors.
+
+## Understanding Benchmarks
+
+The benchmark suite (`benchmarks/run_eval.py`) measures:
+- **Sequential Baseline**: The theoretical time taken if agents ran one after another (sum of latencies).
+- **Parallel Time**: The actual wall-clock time taken (max of latencies).
+- **Speedup**: `Sequential / Parallel`. Values > 1.0x indicate performance gains.
+- **Mode Accuracy**: Whether the Controller correctly identified the optimal execution mode compared to ground truth.
+
+## Troubleshooting
+
+### Missing Dependencies
+If you encounter `ModuleNotFoundError: No module named 'fastapi'`, please install the server dependencies manually:
+```bash
+pip install fastapi uvicorn
+```
+
+### API Key Errors
+Ensure your `.env` file is correctly formatted and contains valid keys for `GROQ_API_KEY` and `OPENAI_API_KEY`.
+
+## Configuration
+
+The application is configurable via environment variables in `.env`:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OPENAI_API_KEY` | Required for OpenAI models | - |
+| `GROQ_API_KEY` | Required for Llama models via Groq | - |
+| `MAX_CONCURRENT_AGENTS` | Limit parallel agents to prevent rate limits | `10` |
+| `DEFAULT_TIMEOUT` | Timeout for individual agent tasks (seconds) | `30` |
+| `LOG_LEVEL` | Logging verbosity (DEBUG, INFO, WARNING) | `INFO` |
+
+## Caching System
+
+ParaMind uses a file-based caching system to save costs and speed up development.
+- **Location**: `.cache/` directory.
+- **Mechanism**: MD5 hash of `(model + prompt)` serves as the key.
+- **Clearing Cache**: Simply delete the `.cache/` directory to force fresh LLM calls.
+
+## Development & Testing
+
+Run the test suite to verify system integrity:
+
+```bash
+# Run all tests
+pytest tests/
+
+# Run specific test categories
+pytest tests/test_dependencies.py  # Verify DAG logic
+pytest tests/test_robustness.py    # Verify error handling
+```
