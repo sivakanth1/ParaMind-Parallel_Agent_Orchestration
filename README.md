@@ -6,7 +6,7 @@
 
 ## Demo Video
 
-[Watch ParaMind Demo Video](assets/ParaMind_demo_video.mp4)
+[Watch ParaMind Demo Video](assets/Paramind_demo_video.mp4)
 
 ## Key Features
 
